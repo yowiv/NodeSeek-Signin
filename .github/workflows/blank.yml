@@ -1,0 +1,24 @@
+name: nodeseek鸡腿签到
+
+on:
+  push:
+    branches:
+      - main  # 在 main 分支上进行推送时触发
+  schedule:
+    - cron: '0 0 * * *'  # 每天凌晨 12 点执行
+
+jobs:
+  run-nodeseek-sign:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Set up Python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11.8'
+
+      - name: run
+        run: python nodeseek_sign.py
