@@ -1,10 +1,22 @@
 import requests
 import os
 
-random = "true"  # 随机签到1-12鸡腿为true，固定鸡腿*5为false
-Cookie = os.environ.get("COOKIE")  # 从环境变量中获取 Cookie
-pushplus_token = os.environ.get("PUSHPLUS_TOKEN")  # 从环境变量中获取 pushplus_token
-
+random = "true"  # 随机签到1-x鸡腿为true，固定鸡腿*5为false
+Cookie = os.environ.get("COOKIE","")
+pushplus_token = os.environ.get("PUSHPLUS_TOKEN")
+telegram_bot_token = os.environ.get("TELEGRAM_BOT_TOKEN","")
+chat_id = os.environ.get("CHAT_ID","")
+telegram_api_url = os.environ.get("TELEGRAM_API_URL","https://api.telegram.org") # 代理api,可以使用自己的反代
+def telegram_Bot(token,chat_id,message):
+    url = f'{telegram_api_url}/bot{token}/sendMessage'
+    data = {
+        'chat_id': chat_id,
+        'text': message
+    }
+    r = requests.post(url, json=data,verify=False)
+    response_data = r.json()
+    msg = response_data['ok']
+    print(f"telegram推送结果：{msg}\n")
 def pushplus_ts(token, rw, msg):
     url = 'https://www.pushplus.plus/send/'
     data = {
@@ -33,17 +45,21 @@ if Cookie:
     }
 
     try:
-        response = requests.post(url, headers=headers, verify=False)
+        response = requests.post(url, headers=headers,verify=False)
         response_data = response.json()
         message = response_data.get('message')
         success = response_data.get('success')
         
         if success == "true":
             print(message)
-            #pushplus_ts(pushplus_token, "nodeseek签到", message)
+            if telegram_bot_token and chat_id:
+                telegram_Bot(telegram_bot_token, chat_id, message)
         else:
             print(message)
-            pushplus_ts(pushplus_token, "nodeseek签到", message)
+            if telegram_bot_token and chat_id:
+                telegram_Bot(telegram_bot_token, chat_id, message)
+            if pushplus_token:
+                pushplus_ts(pushplus_token, "nodeseek签到", message)
     except Exception as e:
         print("发生异常:", e)
 else:
