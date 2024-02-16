@@ -20,5 +20,8 @@ jobs:
         with:
           python-version: '3.11.8'
 
+      - name: install
+        run: pip install requests
+
       - name: run
         run: python nodeseek_sign.py
