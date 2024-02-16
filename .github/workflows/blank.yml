@@ -26,4 +26,5 @@ jobs:
       - name: run
         env:
           COOKIE: ${{ secrets.COOKIE }}
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
         run: python nodeseek_sign.py
