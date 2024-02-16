@@ -3,6 +3,18 @@ import os
 
 random = "true"  # 随机签到1-12鸡腿为true，固定鸡腿*5为false
 Cookie = os.environ.get("COOKIE")  # 从环境变量中获取 Cookie
+pushplus_token = os.environ.get("PUSHPLUS_TOKEN")  # 从环境变量中获取 pushplus_token
+
+def pushplus_ts(token, rw, msg):
+    url = 'https://www.pushplus.plus/send/'
+    data = {
+        "token": token,
+        "title": rw,
+        "content": msg
+    }
+    r = requests.post(url, json=data,verify=False)
+    msg = r.json().get('msg', None)
+    print(f'pushplus推送结果：{msg}\n')
 
 if Cookie:
     url = f"https://www.nodeseek.com/api/attendance?random={random}"
@@ -21,15 +33,17 @@ if Cookie:
     }
 
     try:
-        response = requests.post(url, headers=headers, verify=True)
+        response = requests.post(url, headers=headers, verify=False)
         response_data = response.json()
         message = response_data.get('message')
         success = response_data.get('success')
         
         if success == "true":
             print(message)
+            #pushplus_ts(pushplus_token, "nodeseek签到", message)
         else:
             print(message)
+            pushplus_ts(pushplus_token, "nodeseek签到", message)
     except Exception as e:
         print("发生异常:", e)
 else:
