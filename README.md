@@ -3,6 +3,7 @@
 NodeSeek论坛签到，借助github action 自动触发，默认选择随机签到
 
 需要自行在setting中添加 Repository secrets
+
 如果显示"USER NOT FOUND"就是cookie失效了需要重新抓
 
 
