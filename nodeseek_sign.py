@@ -1,7 +1,7 @@
 import requests
 import os
 
-random = "true"  # 随机签到1-x鸡腿为true，固定鸡腿*5为false
+random = "false"  # 随机签到1-x鸡腿为true，固定鸡腿*5为false
 Cookie = os.environ.get("COOKIE","")
 pushplus_token = os.environ.get("PUSHPLUS_TOKEN")
 telegram_bot_token = os.environ.get("TELEGRAM_BOT_TOKEN","")
