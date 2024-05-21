@@ -61,6 +61,8 @@ if Cookie:
                 telegram_Bot(telegram_bot_token, chat_id, message)
             if pushplus_token:
                 pushplus_ts(pushplus_token, "nodeseek签到", message)
+        else:
+            print("响应内容不是 JSON 格式")
     except requests.exceptions.RequestException as e:
         print(f"HTTP 请求失败: {e}")
     except ValueError as e:
