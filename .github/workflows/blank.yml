@@ -3,7 +3,7 @@ name: nodeseek鸡腿签到
 on:
   push:
     branches:
-      - main  # 在 main 分支上进行推送时触发
+      - main  # 在 main 分支上进行推送时触发 
   schedule:
     - cron: '00 16 * * *'  # 每天凌晨 12 点执行
 
