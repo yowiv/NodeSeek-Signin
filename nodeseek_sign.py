@@ -46,7 +46,7 @@ if Cookie:
     }
 
     try:
-        response = requests.post(url, headers=headers)
+        response = requests.post(url, headers=headers,verify=False)
         response_data = response.json()
         print(response_data)
         message = response_data.get('message')
