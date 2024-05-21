@@ -3,7 +3,7 @@ import requests
 import os
 
 random = "false"  # 随机签到1-x鸡腿为true，固定鸡腿*5为false
-Cookie = os.environ.get("COOKIE","")
+Cookie = os.environ.get("COOKIE","colorscheme=light; sortBy=postTime; session=b7763de25b59c79f2e9db0f1012a3eb2; smac=1713689135-1RDbwWQILGvESTcAzyijjj-JJXmAnu0Rgf7CzI5SwBE; cf_clearance=Jsu9DDG_vZ1F2J_g2RqKgHgZUsLsErBFOieK3DZx0aY-1715178018-1.0.1.1-pZ_6gB_m._BdzJ1.cDXYDwzN7HjYF4DppUMHO0mbww2N6cadTweqRKl8g3YRMnw6xwM3wqF3ylWPvAF4eh7PhA; hmti_=1716266953-Yv8CCoXTN0sCa-cryfDSdJTE_UzU_O7zY9UPqKVPDvoz; cf_chl_rc_m=1; cf_clearance=1ay1KsRqogBJ7VBeGvRMXXWpB6v4dBnqvOv_Ke3zLyA-1716278547-1.0.1.1-aqAk3aQ_j9RUSDYE44nOFVmtQn3FqGxbbSIRREKHkACUg5q0_igEl_rZeKhkfSiH1IRQKvRaAYB67EpRuW4Z1A")
 pushplus_token = os.environ.get("PUSHPLUS_TOKEN")
 telegram_bot_token = os.environ.get("TELEGRAM_BOT_TOKEN","")
 chat_id = os.environ.get("CHAT_ID","")
@@ -32,7 +32,7 @@ def pushplus_ts(token, rw, msg):
 if Cookie:
     url = f"https://www.nodeseek.com/api/attendance?random={random}"
     headers = {
-        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0",
+        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
         'sec-ch-ua': "\"Not A(Brand\";v=\"99\", \"Microsoft Edge\";v=\"121\", \"Chromium\";v=\"121\"",
         'sec-ch-ua-mobile': "?0",
         'sec-ch-ua-platform': "\"Windows\"",
@@ -46,34 +46,24 @@ if Cookie:
     }
 
     try:
-        response = requests.post(url, headers=headers, verify=False)
-        print(f"Response status code: {response.status_code}")
-        print(f"Response headers: {response.headers}")
-        print(f"Response content: {response.text}")
-
-        response.raise_for_status()
+        response = requests.post(url, headers=headers)
+        response_data = response.json()
+        print(response_data)
+        message = response_data.get('message')
+        success = response_data.get('success')
         
-        if response.headers.get('Content-Type') == 'application/json':
-            response_data = response.json()
-            message = response_data.get('message')
-            success = response_data.get('success', False)
-            
-            if success:
-                print(message)
-                if telegram_bot_token and chat_id:
-                    telegram_Bot(telegram_bot_token, chat_id, message)
-            else:
-                print(message)
-                if telegram_bot_token and chat_id:
-                    telegram_Bot(telegram_bot_token, chat_id, message)
-                if pushplus_token:
-                    pushplus_ts(pushplus_token, "nodeseek签到", message)
+        if success == "true":
+            print(message)
+            if telegram_bot_token and chat_id:
+                telegram_Bot(telegram_bot_token, chat_id, message)
         else:
-            print("响应内容不是 JSON 格式")
-    except requests.exceptions.RequestException as e:
-        print(f"HTTP 请求失败: {e}")
-    except ValueError as e:
-        print(f"JSON 解析失败: {e}")
-        print(f"导致错误的响应内容: {response.text}")
+            print(message)
+            if telegram_bot_token and chat_id:
+                telegram_Bot(telegram_bot_token, chat_id, message)
+            if pushplus_token:
+                pushplus_ts(pushplus_token, "nodeseek签到", message)
+    except Exception as e:
+        print("发生异常:", e)
+        print("实际响应内容:", response.text)
 else:
-    print("请先设置 Cookie")
+    print("请先设置Cookie")
