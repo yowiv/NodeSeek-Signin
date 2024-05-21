@@ -61,7 +61,10 @@ if Cookie:
                 telegram_Bot(telegram_bot_token, chat_id, message)
             if pushplus_token:
                 pushplus_ts(pushplus_token, "nodeseek签到", message)
+    except requests.exceptions.RequestException as e:
+        print(f"HTTP 请求失败: {e}")
     except ValueError as e:
-        print("发生异常:", e)
+        print(f"JSON 解析失败: {e}")
+        print(f"导致错误的响应内容: {response.text}")
 else:
-    print("请先设置Cookie")
+    print("请先设置 Cookie")
