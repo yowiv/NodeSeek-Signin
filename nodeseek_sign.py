@@ -46,21 +46,28 @@ if Cookie:
     }
 
     try:
-        response = requests.post(url, headers=headers)
-        response_data = response.json()
-        message = response_data.get('message')
-        success = response_data.get('success')
+        response = requests.post(url, headers=headers, verify=False)
+        print(f"Response status code: {response.status_code}")
+        print(f"Response headers: {response.headers}")
+        print(f"Response content: {response.text}")
+
+        response.raise_for_status()
         
-        if success == "true":
-            print(message)
-            if telegram_bot_token and chat_id:
-                telegram_Bot(telegram_bot_token, chat_id, message)
-        else:
-            print(message)
-            if telegram_bot_token and chat_id:
-                telegram_Bot(telegram_bot_token, chat_id, message)
-            if pushplus_token:
-                pushplus_ts(pushplus_token, "nodeseek签到", message)
+        if response.headers.get('Content-Type') == 'application/json':
+            response_data = response.json()
+            message = response_data.get('message')
+            success = response_data.get('success', False)
+            
+            if success:
+                print(message)
+                if telegram_bot_token and chat_id:
+                    telegram_Bot(telegram_bot_token, chat_id, message)
+            else:
+                print(message)
+                if telegram_bot_token and chat_id:
+                    telegram_Bot(telegram_bot_token, chat_id, message)
+                if pushplus_token:
+                    pushplus_ts(pushplus_token, "nodeseek签到", message)
         else:
             print("响应内容不是 JSON 格式")
     except requests.exceptions.RequestException as e:
