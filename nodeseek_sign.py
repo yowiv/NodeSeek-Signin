@@ -46,7 +46,7 @@ if Cookie:
     }
 
     try:
-        response = requests.post(url, headers=headers,verify=False)
+        response = requests.post(url, headers=headers)
         response_data = response.json()
         message = response_data.get('message')
         success = response_data.get('success')
@@ -61,7 +61,7 @@ if Cookie:
                 telegram_Bot(telegram_bot_token, chat_id, message)
             if pushplus_token:
                 pushplus_ts(pushplus_token, "nodeseek签到", message)
-    except Exception as e:
+    except ValueError as e:
         print("发生异常:", e)
 else:
     print("请先设置Cookie")
