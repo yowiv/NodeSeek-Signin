@@ -5,7 +5,7 @@ on:
     branches:
       - main  # 在 main 分支上进行推送时触发 
   schedule:
-    - cron: '00 45 * * *'  # 每天凌晨 12 点执行
+    - cron: '00 43 * * *'  # 每天凌晨 12 点执行
 
 jobs:
   run-nodeseek-sign:
