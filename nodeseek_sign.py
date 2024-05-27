@@ -29,7 +29,7 @@ def pushplus_ts(token, rw, msg):
         "title": rw,
         "content": msg
     }
-    r = requests.post(url, json=data,verify=False)
+    r = requests.post(url, json=data)
     msg = r.json().get('msg', None)
     print(f'pushplus推送结果：{msg}\n')
 
