@@ -72,7 +72,7 @@ push_config = {
     'CHAT_URL': '',                     # synology chat url
     'CHAT_TOKEN': '',                   # synology chat token
 
-    'PUSH_PLUS_TOKEN': '1a57d5968e1e4f59a48866e12ca31122',              # push+ 微信推送的用户令牌
+    'PUSH_PLUS_TOKEN': '',              # push+ 微信推送的用户令牌
     'PUSH_PLUS_USER': '',               # push+ 微信推送的群组编码
 
     'WE_PLUS_BOT_TOKEN': '',            # 微加机器人的用户令牌
@@ -88,8 +88,8 @@ push_config = {
 
     'QYWX_KEY': '',                     # 企业微信机器人
 
-    'TG_BOT_TOKEN': '6573418378:AAGZ0SOjaWdn7gnfV5wfqOiyG_uCo3mkOrY',                 # tg 机器人的 TG_BOT_TOKEN，例：1407203283:AAG9rt-6RDaaX0HBLZQq0laNOh898iFYaRQ
-    'TG_USER_ID': '5289171320',                   # tg 机器人的 TG_USER_ID，例：1434078534
+    'TG_BOT_TOKEN': '',                 # tg 机器人的 TG_BOT_TOKEN，例：1407203283:AAG9rt-6RDaaX0HBLZQq0laNOh898iFYaRQ
+    'TG_USER_ID': '',                   # tg 机器人的 TG_USER_ID，例：1434078534
     'TG_API_HOST': '',                  # tg 代理 api
     'TG_PROXY_AUTH': '',                # tg 代理认证参数
     'TG_PROXY_HOST': '',                # tg 机器人的 TG_PROXY_HOST
