@@ -1,7 +1,7 @@
 # -- coding: utf-8 --
-import requests
 import os
 import sys
+from curl_cffi import requests
 random = "false"  # 随机签到1-x鸡腿为true，固定鸡腿*5为false
 
 NS_COOKIE = os.environ.get("NS_COOKIE","")
