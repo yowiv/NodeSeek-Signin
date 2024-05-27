@@ -1,6 +1,8 @@
 # NodeSeek-Signin
 
-NodeSeek论坛签到，借助github action 自动触发，默认选择随机签到
+NodeSeek论坛签到，借助github action或青龙面板 自动触发，默认选择随机签到
+
+## Action 
 
 需要自行在setting中添加 Repository secrets
 
@@ -16,7 +18,7 @@ NodeSeek论坛签到，借助github action 自动触发，默认选择随机签�
 | TELEGRAM_API_URL | 代理api，非必需 |
 
 
-# 青龙面板
+## 青龙面板
 
 ```
 ql raw https://raw.githubusercontent.com/YYWO/NodeSeek-Signin/main/nodeseek_sign.py
