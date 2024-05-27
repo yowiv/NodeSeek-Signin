@@ -18,7 +18,7 @@ def telegram_Bot(token,chat_id,message):
         'chat_id': chat_id,
         'text': message
     }
-    r = requests.post(url, json=data,verify=False)
+    r = requests.post(url, json=data)
     response_data = r.json()
     msg = response_data['ok']
     print(f"telegram推送结果：{msg}\n")
@@ -67,7 +67,7 @@ if COOKIE_ENV:
     }
 
     try:
-        response = requests.post(url, headers=headers,verify=False)
+        response = requests.post(url, headers=headers)
         response_data = response.json()
         print(response_data)
         print(COOKIE_ENV)
