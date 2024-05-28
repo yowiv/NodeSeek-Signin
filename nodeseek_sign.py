@@ -1,9 +1,13 @@
 # -- coding: utf-8 --
-import requests
 import os
-
+import sys
+from curl_cffi import requests
 random = "false"  # 随机签到1-x鸡腿为true，固定鸡腿*5为false
-Cookie = os.environ.get("COOKIE","colorscheme=light; sortBy=postTime; session=b7763de25b59c79f2e9db0f1012a3eb2; smac=1713689135-1RDbwWQILGvESTcAzyijjj-JJXmAnu0Rgf7CzI5SwBE; cf_clearance=Jsu9DDG_vZ1F2J_g2RqKgHgZUsLsErBFOieK3DZx0aY-1715178018-1.0.1.1-pZ_6gB_m._BdzJ1.cDXYDwzN7HjYF4DppUMHO0mbww2N6cadTweqRKl8g3YRMnw6xwM3wqF3ylWPvAF4eh7PhA; hmti_=1716266953-Yv8CCoXTN0sCa-cryfDSdJTE_UzU_O7zY9UPqKVPDvoz; cf_chl_rc_m=1; cf_clearance=1ay1KsRqogBJ7VBeGvRMXXWpB6v4dBnqvOv_Ke3zLyA-1716278547-1.0.1.1-aqAk3aQ_j9RUSDYE44nOFVmtQn3FqGxbbSIRREKHkACUg5q0_igEl_rZeKhkfSiH1IRQKvRaAYB67EpRuW4Z1A")
+
+NS_COOKIE = os.environ.get("NS_COOKIE","")
+COOKIE = os.environ.get("COOKIE", "")
+COOKIE_ENV = NS_COOKIE or COOKIE
+
 pushplus_token = os.environ.get("PUSHPLUS_TOKEN")
 telegram_bot_token = os.environ.get("TELEGRAM_BOT_TOKEN","")
 chat_id = os.environ.get("CHAT_ID","")
@@ -14,7 +18,7 @@ def telegram_Bot(token,chat_id,message):
         'chat_id': chat_id,
         'text': message
     }
-    r = requests.post(url, json=data,verify=False)
+    r = requests.post(url, json=data)
     response_data = r.json()
     msg = response_data['ok']
     print(f"telegram推送结果：{msg}\n")
@@ -25,11 +29,28 @@ def pushplus_ts(token, rw, msg):
         "title": rw,
         "content": msg
     }
-    r = requests.post(url, json=data,verify=False)
+    r = requests.post(url, json=data)
     msg = r.json().get('msg', None)
     print(f'pushplus推送结果：{msg}\n')
 
-if Cookie:
+def load_send():
+    global send
+    global hadsend
+    cur_path = os.path.abspath(os.path.dirname(__file__))
+    sys.path.append(cur_path)
+    if os.path.exists(cur_path + "/notify.py"):
+        try:
+            from notify import send
+            hadsend=True
+        except:
+            print("加载notify.py的通知服务失败，请检查~")
+            hadsend=False
+    else:
+        print("加载通知服务失败,缺少notify.py文件")
+        hadsend=False
+load_send()
+
+if COOKIE_ENV:
     url = f"https://www.nodeseek.com/api/attendance?random={random}"
     headers = {
         'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
@@ -42,16 +63,17 @@ if Cookie:
         'sec-fetch-dest': "empty",
         'referer': "https://www.nodeseek.com/board",
         'accept-language': "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
-        'Cookie': Cookie
+        'Cookie': COOKIE_ENV
     }
 
     try:
-        response = requests.post(url, headers=headers,verify=False)
+        response = requests.post(url, headers=headers)
         response_data = response.json()
         print(response_data)
+        print(COOKIE_ENV)
         message = response_data.get('message')
         success = response_data.get('success')
-        
+        send("nodeseek签到", message)
         if success == "true":
             print(message)
             if telegram_bot_token and chat_id:
