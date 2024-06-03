@@ -2,8 +2,8 @@
 import os
 import sys
 from curl_cffi import requests
-random = "false"  # 随机签到1-x鸡腿为true，固定鸡腿*5为false
 
+NS_RANDOM = os.environ.get("NS_RANDOM","false")
 NS_COOKIE = os.environ.get("NS_COOKIE","")
 COOKIE = os.environ.get("COOKIE", "")
 COOKIE_ENV = NS_COOKIE or COOKIE
@@ -51,7 +51,7 @@ def load_send():
 load_send()
 
 if COOKIE_ENV:
-    url = f"https://www.nodeseek.com/api/attendance?random={random}"
+    url = f"https://www.nodeseek.com/api/attendance?random={NS_RANDOM}"
     headers = {
         'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
         'sec-ch-ua': "\"Not A(Brand\";v=\"99\", \"Microsoft Edge\";v=\"121\", \"Chromium\";v=\"121\"",
