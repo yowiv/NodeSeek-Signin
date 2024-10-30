@@ -3,7 +3,7 @@ import os
 import sys
 from curl_cffi import requests
 
-NS_RANDOM = os.environ.get("NS_RANDOM","false")
+NS_RANDOM = os.environ.get("NS_RANDOM","true")
 NS_COOKIE = os.environ.get("NS_COOKIE","")
 COOKIE = os.environ.get("COOKIE", "")
 COOKIE_ENV = NS_COOKIE or COOKIE
