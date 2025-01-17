@@ -17,7 +17,7 @@ def telegram_Bot(token,chat_id,message):
     url = f'{telegram_api_url}/bot{token}/sendMessage'
     data = {
         'chat_id': chat_id,
-        'thread_id': thread_id,
+        'message_thread_id': thread_id,
         'text': message
     }
     r = requests.post(url, json=data)
