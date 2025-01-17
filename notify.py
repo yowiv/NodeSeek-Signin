@@ -90,6 +90,7 @@ push_config = {
 
     'TG_BOT_TOKEN': '',                 # tg 机器人的 TG_BOT_TOKEN，例：1407203283:AAG9rt-6RDaaX0HBLZQq0laNOh898iFYaRQ
     'TG_USER_ID': '',                   # tg 机器人的 TG_USER_ID，例：1434078534
+    'TG_THREAD_ID': '',                 # tg 机器人的 TG_THREAD_ID 超级群组话题id，例：2
     'TG_API_HOST': '',                  # tg 代理 api
     'TG_PROXY_AUTH': '',                # tg 代理认证参数
     'TG_PROXY_HOST': '',                # tg 机器人的 TG_PROXY_HOST
@@ -577,6 +578,7 @@ def telegram_bot(title: str, content: str) -> None:
     headers = {"Content-Type": "application/x-www-form-urlencoded"}
     payload = {
         "chat_id": str(push_config.get("TG_USER_ID")),
+        "message_thread_id": str(push_config.get("TG_THREAD_ID")),
         "text": f"{title}\n\n{content}",
         "disable_web_page_preview": "true",
     }
