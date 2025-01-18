@@ -11,11 +11,13 @@ COOKIE_ENV = NS_COOKIE or COOKIE
 pushplus_token = os.environ.get("PUSHPLUS_TOKEN")
 telegram_bot_token = os.environ.get("TELEGRAM_BOT_TOKEN","")
 chat_id = os.environ.get("CHAT_ID","")
+thread_id = os.environ.get("THREAD_ID","")
 telegram_api_url = os.environ.get("TELEGRAM_API_URL","https://api.telegram.org") # 代理api,可以使用自己的反代
 def telegram_Bot(token,chat_id,message):
     url = f'{telegram_api_url}/bot{token}/sendMessage'
     data = {
         'chat_id': chat_id,
+        'message_thread_id': thread_id,
         'text': message
     }
     r = requests.post(url, json=data)

@@ -15,6 +15,7 @@ NodeSeek论坛签到，借助github action或青龙面板 自动触发，默认�
 |    PUSHPLUS_TOKEN    | pushplus中的用户token，用于推送，非必需 |
 | TELEGRAM_BOT_TOKEN | 电报token，非必需 |
 | CHAT_ID | 电报chatid，非必需 |
+| THREAD_ID | 电报超级群组话题id，非必需 |
 | TELEGRAM_API_URL | 代理api，非必需 |
 
 
