@@ -5,7 +5,7 @@ on:
     branches:
       - main  # 在 main 分支上进行推送时触发 
   schedule:
-    - cron: '00 16 * * *'  # 每天凌晨 12 点执行 
+    - cron: '30 0 * * *'  # 每天凌晨 12 点执行 
   workflow_dispatch:  # 添加手动触发
 
 jobs:
