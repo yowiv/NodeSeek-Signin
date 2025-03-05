@@ -6,17 +6,17 @@ NodeSeek论坛签到，借助github action或青龙面板 自动触发，默认�
 
 需要自行在setting中添加 Repository secrets
 
-如果显示"USER NOT FOUND"就是cookie失效了需要重新抓
+如果显示"USER NOT FOUND"或显示实际响应内容显示html就是cookie失效了需要重新抓
 
 
 |  名称  |                 含义                  |
 | :----: | :-----------------------------------: |
-| COOKIE | 论坛用户cookie，自行在浏览器F12中查看 |
-|    PUSHPLUS_TOKEN    | pushplus中的用户token，用于推送，非必需 |
-| TELEGRAM_BOT_TOKEN | 电报token，非必需 |
-| CHAT_ID | 电报chatid，非必需 |
-| THREAD_ID | 电报超级群组话题id，非必需 |
-| TELEGRAM_API_URL | 代理api，非必需 |
+| NS_COOKIE | 论坛用户cookie，自行在浏览器F12中查看 |
+| TG_BOT_TOKEN | tg 机器人的 TG_BOT_TOKEN，例：1407203283:AAG9rt-6RDaaX0HBLZQq0laNOh898iFYaRQ，非必需 |
+| TG_USER_ID | tg 机器人的 TG_USER_ID，例：1434078534，非必需 |
+| TG_THREAD_ID | tg 机器人的 TG_THREAD_ID 超级群组话题id，非必需 |
+| PROXY | 代理服务器地址，格式如：http://username:password@127.0.0.1:7890 或 http://127.0.0.1:7890，非必需 |
+| USE_PROXY | 是否使用代理，true或false，默认为false，非必需 |
 
 
 ## 青龙面板
@@ -24,6 +24,3 @@ NodeSeek论坛签到，借助github action或青龙面板 自动触发，默认�
 ```
 ql raw https://raw.githubusercontent.com/YYWO/NodeSeek-Signin/main/nodeseek_sign.py
 ```
-|  名称  |                 含义                  |
-| :----: | :-----------------------------------: |
-| NS_COOKIE | 论坛用户cookie，自行在浏览器F12中查看 |

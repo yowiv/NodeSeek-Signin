@@ -7,33 +7,8 @@ NS_RANDOM = os.environ.get("NS_RANDOM","true")
 NS_COOKIE = os.environ.get("NS_COOKIE","")
 COOKIE = os.environ.get("COOKIE", "")
 COOKIE_ENV = NS_COOKIE or COOKIE
-
-pushplus_token = os.environ.get("PUSHPLUS_TOKEN")
-telegram_bot_token = os.environ.get("TELEGRAM_BOT_TOKEN","")
-chat_id = os.environ.get("CHAT_ID","")
-thread_id = os.environ.get("THREAD_ID","")
-telegram_api_url = os.environ.get("TELEGRAM_API_URL","https://api.telegram.org") # 代理api,可以使用自己的反代
-def telegram_Bot(token,chat_id,message):
-    url = f'{telegram_api_url}/bot{token}/sendMessage'
-    data = {
-        'chat_id': chat_id,
-        'message_thread_id': thread_id,
-        'text': message
-    }
-    r = requests.post(url, json=data)
-    response_data = r.json()
-    msg = response_data['ok']
-    print(f"telegram推送结果：{msg}\n")
-def pushplus_ts(token, rw, msg):
-    url = 'https://www.pushplus.plus/send/'
-    data = {
-        "token": token,
-        "title": rw,
-        "content": msg
-    }
-    r = requests.post(url, json=data)
-    msg = r.json().get('msg', None)
-    print(f'pushplus推送结果：{msg}\n')
+PROXY = os.environ.get("PROXY", "")  # 代理地址，格式如：http://username:password@127.0.0.1:7890 或 http://127.0.0.1:7890
+USE_PROXY = os.environ.get("USE_PROXY", "false").lower() == "true"  # 是否使用代理，默认为false
 
 def load_send():
     global send
@@ -69,7 +44,11 @@ if COOKIE_ENV:
     }
 
     try:
-        response = requests.post(url, headers=headers,impersonate="chrome110")
+        if USE_PROXY and PROXY:
+            print(f"使用代理: {PROXY}")
+            response = requests.post(url, headers=headers, impersonate="chrome110", proxies={"http": PROXY, "https": PROXY})
+        else:
+            response = requests.post(url, headers=headers, impersonate="chrome110")
         response_data = response.json()
         print(response_data)
         print(COOKIE_ENV)
@@ -78,14 +57,8 @@ if COOKIE_ENV:
         send("nodeseek签到", message)
         if success == "true":
             print(message)
-            if telegram_bot_token and chat_id:
-                telegram_Bot(telegram_bot_token, chat_id, message)
         else:
             print(message)
-            if telegram_bot_token and chat_id:
-                telegram_Bot(telegram_bot_token, chat_id, message)
-            if pushplus_token:
-                pushplus_ts(pushplus_token, "nodeseek签到", message)
     except Exception as e:
         print("发生异常:", e)
         print("实际响应内容:", response.text)
