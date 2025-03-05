@@ -3,32 +3,35 @@ name: nodeseek鸡腿签到
 on:
   push:
     branches:
-      - main  # 在 main 分支上进行推送时触发 
+      - main
   schedule:
-    - cron: '00 16 * * *'  # 每天凌晨 12 点执行 
-  workflow_dispatch:  # 添加手动触发
+    - cron: '00 16 * * *'  # 北京时间 00:00 (UTC+8)，对应UTC时间 16:00
+  workflow_dispatch:
 
 jobs:
   run-nodeseek-sign:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: 检出代码仓库
         uses: actions/checkout@v3
       
-      - name: Set up Python environment
+      - name: 配置Python环境
         uses: actions/setup-python@v2
         with:
           python-version: '3.11.8'
 
-      - name: install
+      - name: 安装依赖包
         run: pip install requests curl_cffi
 
-      - name: run
+      - name: 运行签到脚本
         env:
           COOKIE: ${{ secrets.COOKIE }}
+          NS_COOKIE: ${{ secrets.NS_COOKIE }}
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_USER_ID: ${{ secrets.TG_USER_ID }}
+          TG_THREAD_ID: ${{ secrets.TG_THREAD_ID }}
           PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          CHAT_ID: ${{ secrets.CHAT_ID }}
-          THREAD_ID: ${{ secrets.THREAD_ID }}
+          PROXY: ${{ secrets.PROXY }}
+          USE_PROXY: ${{ secrets.USE_PROXY }}
         run: python nodeseek_sign.py
