@@ -26,7 +26,6 @@ jobs:
 
       - name: 运行签到脚本
         env:
-          COOKIE: ${{ secrets.COOKIE }}
           NS_COOKIE: ${{ secrets.NS_COOKIE }}
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_USER_ID: ${{ secrets.TG_USER_ID }}
@@ -34,4 +33,7 @@ jobs:
           PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
           PROXY: ${{ secrets.PROXY }}
           USE_PROXY: ${{ secrets.USE_PROXY }}
+          CLIENTT_KEY: ${{ secrets.CLIENTT_KEY }}
+          USER: ${{ secrets.USER }}
+          PASS: ${{ secrets.PASS }}
         run: python nodeseek_sign.py
