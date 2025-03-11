@@ -147,7 +147,7 @@ def session_login():
             
             cookie_dict = session.cookies.get_dict()
             cookie_string = '; '.join([f"{name}={value}" for name, value in cookie_dict.items()])
-            print(f"获取到的Cookie: {cookie_string}")
+            #print(f"获取到的Cookie: {cookie_string}")
             
             return cookie_string
         else:
