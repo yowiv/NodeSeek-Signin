@@ -51,7 +51,7 @@ def session_login():
             print("获取验证码令牌失败，无法登录")
             return None
         
-        #print(f"成功获取验证码令牌: {token[:30]}...{token[-10:]}")
+        #print(f"成功获取验证码令牌: {token[:30]}...{token[-10:]}]")
         #print(token)
             
     except TurnstileSolverError as e:
@@ -121,102 +121,71 @@ def sign():
     url = f"https://www.nodeseek.com/api/attendance?random={NS_RANDOM}"
     headers = {
         'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
-        'sec-ch-ua': "\"Not A(Brand\";v=\"99\", \"Microsoft Edge\";v=\"121\", \"Chromium\";v=\"121\"",
-        'sec-ch-ua-mobile': "?0",
-        'sec-ch-ua-platform': "\"Windows\"",
         'origin': "https://www.nodeseek.com",
-        'sec-fetch-site': "same-origin",
-        'sec-fetch-mode': "cors",
-        'sec-fetch-dest': "empty",
         'referer': "https://www.nodeseek.com/board",
-        'accept-language': "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
         'Cookie': NS_COOKIE
     }
 
     try:
         response = requests.post(url, headers=headers, impersonate="chrome110")
         response_data = response.json()
-        #print(response_data)
+        print(f"签到返回: {response_data}")
         message = response_data.get('message', '')
-        success = response_data.get('success')
         
-        if success == "true":
+        # 简化判断逻辑
+        if "鸡腿" in message or response_data.get('success') == True:
+            # 如果消息中包含"鸡腿"或success为True，都视为签到成功
             print(f"签到成功: {message}")
             return "success", message
-        elif message and "已完成签到" in message:
+        elif "已完成签到" in message:
             print(f"已经签到过: {message}")
             return "already_signed", message
-        elif message == "USER NOT FOUND" or (response_data.get('status') == 404):
-            print("Cookie已失效: USER NOT FOUND")
+        elif message == "USER NOT FOUND" or response_data.get('status') == 404:
+            print("Cookie已失效")
             return "invalid_cookie", message
         else:
             print(f"签到失败: {message}")
             return "fail", message
+            
     except Exception as e:
         print("发生异常:", e)
-        print("实际响应内容:", response.text if 'response' in locals() else "没有响应")
         return "error", str(e)
 
 if __name__ == "__main__":
+    # 尝试使用现有Cookie签到
+    sign_result, sign_message = "no_cookie", ""
+    
     if NS_COOKIE:
         sign_result, sign_message = sign()
-        
-        if sign_result in ["success", "already_signed"]:
-            if sign_result == "success":
-                print("签到成功")
-                if hadsend:
-                    send("nodeseek签到", f"{sign_message}")
-            else:
-                print("今天已经签到过了")
-                if hadsend:
-                    send("nodeseek签到", f"{sign_message}")
-        elif sign_result in ["invalid_cookie", "error", "fail"]:
-            if USER and PASS:
-                print("Cookie失效或签到异常，尝试重新登录...")
-                cookie = session_login()
-                if cookie:
-                    print("登录成功，使用新Cookie签到")
-                    NS_COOKIE = cookie
-                    sign_result, sign_message = sign()
-                    
-                    if sign_result in ["success", "already_signed"]:
-                        print("使用新Cookie签到成功")
-                        if hadsend:
-                            send("nodeseek签到", f"{sign_message}\nCookie: {cookie}")
-                    else:
-                        print("使用新Cookie签到失败")
-                        if hadsend:
-                            send("nodeseek签到", f"{sign_message}")
-                else:
-                    print("重新登录失败")
-                    if hadsend:
-                        send("nodeseek登录", "登录失败")
-            else:
-                print("Cookie失效或签到异常，但未设置用户名密码，无法重新登录")
-                if hadsend:
-                    send("nodeseek签到", "Cookie已失效，未设置用户名密码，无法重新登录")
+    
+    # 处理签到结果
+    if sign_result in ["success", "already_signed"]:
+        status = "签到成功" if sign_result == "success" else "今天已经签到过了"
+        print(status)
+        if hadsend:
+            send("nodeseek签到", f"{sign_message}")
     else:
+        # 签到失败或没有Cookie，尝试登录
         if USER and PASS:
-            print("没有找到Cookie，尝试登录获取...")
+            print("尝试登录获取新Cookie...")
             cookie = session_login()
             if cookie:
-                print("登录成功，使用获取的Cookie进行签到")
+                print("登录成功，使用新Cookie签到")
                 NS_COOKIE = cookie
                 sign_result, sign_message = sign()
                 
-                if sign_result in ["success", "already_signed"]:
-                    print("首次登录签到成功")
-                    if hadsend:
-                        send("nodeseek签到", f"{sign_message}\nCookie: {cookie}")
-                else:
-                    print("首次登录签到失败")
-                    if hadsend:
-                        send("nodeseek签到", f"{sign_message}")
+                status = "签到成功" if sign_result in ["success", "already_signed"] else "签到失败"
+                print(status)
+                if hadsend:
+                    message = f"{sign_message}"
+                    if sign_result in ["success", "already_signed"]:
+                        message += f"\nCookie: {cookie}"
+                    send("nodeseek签到", message)
             else:
                 print("登录失败")
                 if hadsend:
                     send("nodeseek登录", "登录失败")
         else:
-            print("没有Cookie且未设置用户名密码，无法执行任何操作")
+            print("无法执行操作：没有有效Cookie且未设置用户名密码")
             if hadsend:
-                send("nodeseek签到", "没有Cookie且未设置用户名密码，无法执行任何操作")
+                send("nodeseek签到", "无法执行操作：没有有效Cookie且未设置用户名密码")
