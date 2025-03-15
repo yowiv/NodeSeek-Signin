@@ -13,9 +13,13 @@ cloudflare 求解
 docker run -itd --name cloudfreed -p 3000:3000 -e CLIENT_KEY=YOUR_CLIENT_KEY -e MAX_TASKS=1 -e  TIMEOUT=120  sanling000/cloudfreed
 ```
 如果要使用账号密码登录必须安装，在是家宽IP上的机器安装最好
+
 CLIENT_KEY：客户端 API 密钥
+
 MAX_TASKS：最大并发任务数（默认值：1）
+
 timeout：每个任务的超时时间（以秒为单位）（默认值：120）
+
 
 |  变量名称  |                 含义                  |
 | :----: | :-----------------------------------: |
