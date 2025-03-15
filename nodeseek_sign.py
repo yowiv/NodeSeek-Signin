@@ -3,14 +3,15 @@ import os
 import sys
 import time
 from curl_cffi import requests
+from turnstile_solver import TurnstileSolver, TurnstileSolverError
 
+# 配置参数
+API_BASE_URL = os.environ.get("API_BASE_URL", "")
 CLIENTT_KEY = os.environ.get("CLIENTT_KEY", "")
 NS_RANDOM = os.environ.get("NS_RANDOM", "true")
 NS_COOKIE = os.environ.get("NS_COOKIE", "")
 USER = os.environ.get("USER", "")
 PASS = os.environ.get("PASS", "")
-PROXY = os.environ.get("PROXY", "")  # 代理地址，格式如：http://username:password@127.0.0.1:7890 或 http://127.0.0.1:7890
-USE_PROXY = os.environ.get("USE_PROXY", "false").lower() == "true"  # 是否使用代理，默认为false
 
 def load_send():
     global send
@@ -30,89 +31,43 @@ def load_send():
 
 load_send()
 
-def createTask():
-    url = "https://api.yescaptcha.com/createTask"
-    
-    data = {
-        "clientKey": CLIENTT_KEY,
-        "task": {
-            "type": "TurnstileTaskProxyless",
-            "websiteURL": "https://www.nodeseek.com/signIn.html",
-            "websiteKey": "0x4AAAAAAAaNy7leGjewpVyR"
-        }
-    }
-    
-    try:
-        response = requests.post(url, json=data, impersonate="chrome110")
-        result = response.json()
-        
-        if result.get("errorId") == 0:
-            return result.get("taskId")
-        else:
-            print(f"创建验证码任务失败: {result.get('errorDescription')}")
-            return None
-    except Exception as e:
-        print(f"创建验证码任务异常: {e}")
-        return None
-
-def getTaskResult(task_id):
-    if not task_id:
-        return None
-        
-    url = "https://api.yescaptcha.com/getTaskResult"
-    data = {
-        "clientKey": CLIENTT_KEY,
-        "taskId": task_id
-    }
-    
-    max_attempts = 10
-    for attempt in range(max_attempts):
-        try:
-            response = requests.post(url, json=data, impersonate="chrome110")
-            result = response.json()
-            
-            if result.get("errorId") > 0:
-                print(f"获取验证码结果失败: {result.get('errorDescription')}")
-                return None
-                
-            if result.get("status") == "ready":
-                return result.get("solution", {}).get("token")
-                
-            if result.get("status") == "processing":
-                print(f"验证码正在处理中，等待3秒后重试 ({attempt+1}/{max_attempts})")
-                time.sleep(3)
-                continue
-                
-        except Exception as e:
-            print(f"获取验证码结果异常: {e}")
-            return None
-            
-    print("获取验证码结果超时")
-    return None
-
 def session_login():
-    # 创建验证码任务
-    task_id = createTask()
-    if task_id is None:
-        print("创建验证码任务失败，无法登录")
+    # 使用TurnstileSolver模块解决验证码
+    try:
+        print("正在使用TurnstileSolver解决验证码...")
+        solver = TurnstileSolver(
+            api_base_url=API_BASE_URL,
+            client_key=CLIENTT_KEY
+        )
+        
+        token = solver.solve(
+            url="https://www.nodeseek.com/signIn.html",
+            sitekey="0x4AAAAAAAaNy7leGjewpVyR",
+            action="login",
+            verbose=True
+        )
+        
+        if not token:
+            print("获取验证码令牌失败，无法登录")
+            return None
+        
+        #print(f"成功获取验证码令牌: {token[:30]}...{token[-10:]}")
+        #print(token)
+            
+    except TurnstileSolverError as e:
+        print(f"验证码解析错误: {e}")
+        return None
+    except Exception as e:
+        print(f"获取验证码过程中发生异常: {e}")
         return None
     
-    # 获取验证码结果
-    token = getTaskResult(task_id)
-    if token is None:
-        print("获取验证码失败，无法登录")
-        return None
-    
+    # 创建会话并登录
     session = requests.Session(impersonate="chrome110")
-    
-    if USE_PROXY and PROXY:
-        print(f"使用代理: {PROXY}")
-        session.proxies = {"http": PROXY, "https": PROXY}
     
     try:
         session.get("https://www.nodeseek.com/signIn.html")
-    except:
-        print("访问登录页面失败")
+    except Exception as e:
+        print(f"访问登录页面失败: {e}")
     
     url = "https://www.nodeseek.com/api/account/signIn"
     headers = {
@@ -138,16 +93,14 @@ def session_login():
     
     try:
         response = session.post(url, json=data, headers=headers)
-        
         response_data = response.json()
         print(response_data)
         
         if response_data.get('success') == True:
-            print("登录成功")
             
             cookie_dict = session.cookies.get_dict()
             cookie_string = '; '.join([f"{name}={value}" for name, value in cookie_dict.items()])
-            #print(f"获取到的Cookie: {cookie_string}")
+            print(f"获取到的Cookie: {cookie_string}")
             
             return cookie_string
         else:
@@ -181,13 +134,9 @@ def sign():
     }
 
     try:
-        if USE_PROXY and PROXY:
-            print(f"使用代理: {PROXY}")
-            response = requests.post(url, headers=headers, impersonate="chrome110", proxies={"http": PROXY, "https": PROXY})
-        else:
-            response = requests.post(url, headers=headers, impersonate="chrome110")
+        response = requests.post(url, headers=headers, impersonate="chrome110")
         response_data = response.json()
-        print(response_data)
+        #print(response_data)
         message = response_data.get('message', '')
         success = response_data.get('success')
         
