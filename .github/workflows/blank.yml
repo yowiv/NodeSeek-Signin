@@ -30,9 +30,7 @@ jobs:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_USER_ID: ${{ secrets.TG_USER_ID }}
           TG_THREAD_ID: ${{ secrets.TG_THREAD_ID }}
-          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
-          PROXY: ${{ secrets.PROXY }}
-          USE_PROXY: ${{ secrets.USE_PROXY }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
           CLIENTT_KEY: ${{ secrets.CLIENTT_KEY }}
           USER: ${{ secrets.USER }}
           PASS: ${{ secrets.PASS }}
