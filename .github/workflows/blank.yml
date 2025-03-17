@@ -22,7 +22,7 @@ jobs:
           python-version: '3.11.8'
 
       - name: 安装依赖包
-        run: pip install curl_cffi
+        run: pip install curl_cffi requests
 
       - name: 运行签到脚本
         env:
