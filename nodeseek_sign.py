@@ -4,6 +4,7 @@ import sys
 import time
 from curl_cffi import requests
 from turnstile_solver import TurnstileSolver, TurnstileSolverError
+from yescaptcha import YesCaptchaSolver, YesCaptchaSolverError
 
 # 配置参数
 API_BASE_URL = os.environ.get("API_BASE_URL", "")
@@ -12,6 +13,7 @@ NS_RANDOM = os.environ.get("NS_RANDOM", "true")
 NS_COOKIE = os.environ.get("NS_COOKIE", "")
 USER = os.environ.get("USER", "")
 PASS = os.environ.get("PASS", "")
+SOLVER_TYPE = os.environ.get("SOLVER_TYPE", "turnstile")
 
 def load_send():
     global send
@@ -31,30 +33,34 @@ def load_send():
 
 load_send()
 
+
 def session_login():
-    # 使用TurnstileSolver模块解决验证码
+    # 根据环境变量选择使用哪个验证码解决器
     try:
-        print("正在使用TurnstileSolver解决验证码...")
-        solver = TurnstileSolver(
-            api_base_url=API_BASE_URL,
-            client_key=CLIENTT_KEY
-        )
+        if SOLVER_TYPE.lower() == "yescaptcha":
+            print("正在使用 YesCaptcha 解决验证码...")
+            solver = YesCaptchaSolver(
+                api_base_url="https://api.yescaptcha.com",
+                client_key=CLIENTT_KEY
+            )
+        else:  # 默认使用 turnstile_solver
+            print("正在使用 TurnstileSolver 解决验证码...")
+            solver = TurnstileSolver(
+                api_base_url=API_BASE_URL,
+                client_key=CLIENTT_KEY
+            )
         
         token = solver.solve(
             url="https://www.nodeseek.com/signIn.html",
             sitekey="0x4AAAAAAAaNy7leGjewpVyR",
-            action="login",
             verbose=True
         )
         
         if not token:
             print("获取验证码令牌失败，无法登录")
             return None
-        
-        #print(f"成功获取验证码令牌: {token[:30]}...{token[-10:]}]")
-        #print(token)
             
-    except TurnstileSolverError as e:
+    except (TurnstileSolverError, YesCaptchaSolverError) as e:
         print(f"验证码解析错误: {e}")
         return None
     except Exception as e:
