@@ -1,14 +1,5 @@
 # NodeSeek-Signin
 
-<div align="center">
-  
-![NodeSeek](https://img.shields.io/badge/NodeSeek-自动签到-green)
-![GitHub stars](https://img.shields.io/github/stars/yowiv/NodeSeek-Signin?style=flat)
-![Python](https://img.shields.io/badge/Language-Python-blue)
-![License](https://img.shields.io/github/license/yowiv/NodeSeek-Signin)
-
-</div>
-
 ## 📝 项目介绍
 
 这是一个用于 NodeSeek 论坛自动签到的工具，支持通过 GitHub Actions 或青龙面板进行定时自动签到操作。签到模式默认为随机签到，帮助用户轻松获取论坛每日签到奖励。
