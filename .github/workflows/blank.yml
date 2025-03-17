@@ -22,16 +22,23 @@ jobs:
           python-version: '3.11.8'
 
       - name: 安装依赖包
-        run: pip install requests curl_cffi
+        run: pip install curl_cffi
 
       - name: 运行签到脚本
         env:
+          # 基本配置
           NS_COOKIE: ${{ secrets.NS_COOKIE }}
+          USER: ${{ secrets.USER }}
+          PASS: ${{ secrets.PASS }}
+          NS_RANDOM: ${{ secrets.NS_RANDOM }}
+
+          # 验证码服务配置
+          SOLVER_TYPE: ${{ secrets.SOLVER_TYPE }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          CLIENTT_KEY: ${{ secrets.CLIENTT_KEY }}
+          
+          # 通知推送配置
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_USER_ID: ${{ secrets.TG_USER_ID }}
           TG_THREAD_ID: ${{ secrets.TG_THREAD_ID }}
-          API_BASE_URL: ${{ secrets.API_BASE_URL }}
-          CLIENTT_KEY: ${{ secrets.CLIENTT_KEY }}
-          USER: ${{ secrets.USER }}
-          PASS: ${{ secrets.PASS }}
         run: python nodeseek_sign.py
