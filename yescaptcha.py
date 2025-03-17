@@ -101,7 +101,8 @@ class YesCaptchaSolver:
                 "type": task_type,
                 "websiteURL": url,
                 "websiteKey": sitekey
-            }
+            },
+            "softID": "62709",
         }
         
         # 如果需要添加用户代理
