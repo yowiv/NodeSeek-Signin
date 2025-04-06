@@ -1,6 +1,7 @@
 import requests
 import time
 from typing import Dict, Optional, Any, Union
+import json
 
 class TurnstileSolverError(Exception):
     """Turnstile 解决器错误基类"""
@@ -67,27 +68,25 @@ class TurnstileSolver:
         if verbose:
             print("正在创建 Turnstile 验证任务...")
             
-        # 准备任务参数
-        payload = {
+        payload_dict = {
             "clientKey": self.client_key,
             "type": "Turnstile",
             "url": url,
-            "sitekey": sitekey
+            "siteKey": sitekey 
         }
         
-        # 添加可选参数
-        if action:
-            payload["action"] = action
-        if user_agent:
-            payload["userAgent"] = user_agent
         if proxy:
-            payload["proxy"] = proxy
+            payload_dict["proxy"] = proxy
+            
+        payload = json.dumps(payload_dict)
             
         try:
             # 创建任务
+            headers = {"Content-Type": "application/json"}
             response = requests.post(
                 self.create_task_url, 
-                json=payload,
+                data=payload,
+                headers=headers,
                 timeout=self.timeout
             )
             response.raise_for_status()
@@ -103,11 +102,14 @@ class TurnstileSolver:
                 raise TurnstileSolverError("未能获取到taskId")
                 
             # 准备获取结果参数
-            result_payload = {
+            result_payload_dict = {
                 "clientKey": self.client_key,
                 "taskId": task_id
             }
-            
+
+            # 转换为字符串形式的JSON
+            result_payload = json.dumps(result_payload_dict)
+
             # 轮询获取结果
             for attempt in range(1, self.max_retries + 1):
                 if verbose:
@@ -115,7 +117,8 @@ class TurnstileSolver:
                 
                 result_response = requests.post(
                     self.get_result_url, 
-                    json=result_payload,
+                    data=result_payload,
+                    headers=headers,
                     timeout=self.timeout
                 )
                 result_response.raise_for_status()
@@ -133,7 +136,17 @@ class TurnstileSolver:
                     if verbose:
                         print("Turnstile 验证成功完成!")
                         
-                    token = result_data.get('result', {}).get('response')
+                    # 调整令牌获取方式，处理嵌套结构
+                    result_obj = result_data.get('result', {})
+                    response_obj = result_obj.get('response', {})
+                    
+                    # 检查响应结构
+                    if isinstance(response_obj, dict) and 'token' in response_obj:
+                        # 新的响应格式
+                        token = response_obj.get('token')
+                    else:
+                        # 兼容旧响应格式
+                        token = response_obj
                     
                     if not token:
                         raise TurnstileSolverError("未找到验证令牌")
