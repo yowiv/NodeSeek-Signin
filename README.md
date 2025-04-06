@@ -48,11 +48,7 @@ ql repo https://github.com/yowiv/NodeSeek-Signin.git
 #### 方案A：CloudFreed 自建服务（推荐家宽用户）
 
 ```bash
-docker run -itd --name cloudfreed -p 3000:3000 \
-  -e CLIENT_KEY=你的客户端密钥 \
-  -e MAX_TASKS=1 \
-  -e TIMEOUT=120 \
-  sanling000/cloudfreed
+docker run -itd   --name cloudflyer   -p 3000:3000   --restart unless-stopped   jackzzs/cloudflyer -K 你的客户端密钥 -H 0.0.0.0
 ```
 
 配置以下环境变量：
