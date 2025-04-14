@@ -30,7 +30,7 @@ jobs:
           NS_COOKIE: ${{ secrets.NS_COOKIE }}
           USER: ${{ secrets.USER }}
           PASS: ${{ secrets.PASS }}
-          NS_RANDOM: ${{ secrets.NS_RANDOM }}
+          # NS_RANDOM: ${{ secrets.NS_RANDOM }}
 
           # 验证码服务配置
           SOLVER_TYPE: ${{ secrets.SOLVER_TYPE }}
