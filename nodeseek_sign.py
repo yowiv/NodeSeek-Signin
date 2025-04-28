@@ -39,7 +39,9 @@ def get_env_account_pairs():
     # 获取基本账号（无编号）
     base_user = os.environ.get("USER", "")
     base_pass = os.environ.get("PASS", "")
-    if base_user and base_pass:
+    
+    if base_user and base_pass and (len(base_user) > 1 and not base_user.startswith("SYSTEM")):
+        print(f"检测到无编号账号: {base_user}")
         accounts.append((base_user, base_pass))
     
     # 获取编号账号 (USER1/PASS1, USER2/PASS2...)
@@ -53,6 +55,7 @@ def get_env_account_pairs():
         if not username or not password:
             break
             
+        print(f"检测到编号账号{i}: {username}")
         accounts.append((username, password))
         i += 1
     
@@ -219,7 +222,10 @@ if __name__ == "__main__":
     accounts = get_env_account_pairs()
     cookies = parse_cookies(NS_COOKIE)
     
-    print(f"检测到 {len(accounts)} 个账号配置")
+    print(f"检测到 {len(accounts)} 个账号配置:")
+    for i, (username, _) in enumerate(accounts):
+        print(f"  - 账号{i+1}: {username}")
+    
     print(f"检测到 {len(cookies)} 个Cookie配置")
     
     # 先处理已有Cookie的情况
