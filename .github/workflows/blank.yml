@@ -22,23 +22,45 @@ jobs:
           python-version: '3.11.8'
 
       - name: 安装依赖包
-        run: pip install curl_cffi requests
+        run: |
+          pip install curl_cffi requests
+          pip install python-dotenv   # 用于处理环境变量
+
+      - name: 自动生成账号配置
+        run: |
+          # 创建环境变量文件
+          echo "# 自动生成的多账号配置文件" > .env
+          # 检查并添加所有 USER/PASS 变量
+          for i in {1..10}; do
+            if [ -n "${{ secrets[format('USER{0}', i)] }}" ]; then
+              echo "USER$i=${{ secrets[format('USER{0}', i)] }}" >> .env
+            fi
+            if [ -n "${{ secrets[format('PASS{0}', i)] }}" ]; then
+              echo "PASS$i=${{ secrets[format('PASS{0}', i)] }}" >> .env
+            fi
+          done
+          # 添加基本账号
+          if [ -n "${{ secrets.USER }}" ]; then
+            echo "USER=${{ secrets.USER }}" >> .env
+          fi
+          if [ -n "${{ secrets.PASS }}" ]; then
+            echo "PASS=${{ secrets.PASS }}" >> .env
+          fi
+          # 添加Cookie和其他配置
+          if [ -n "${{ secrets.NS_COOKIE }}" ]; then
+            echo "NS_COOKIE=${{ secrets.NS_COOKIE }}" >> .env
+          fi
+          echo "SOLVER_TYPE=${{ secrets.SOLVER_TYPE }}" >> .env
+          echo "API_BASE_URL=${{ secrets.API_BASE_URL }}" >> .env
+          echo "CLIENTT_KEY=${{ secrets.CLIENTT_KEY }}" >> .env
+          # 添加通知配置
+          if [ -n "${{ secrets.TG_BOT_TOKEN }}" ]; then
+            echo "TG_BOT_TOKEN=${{ secrets.TG_BOT_TOKEN }}" >> .env
+            echo "TG_USER_ID=${{ secrets.TG_USER_ID }}" >> .env
+            echo "TG_THREAD_ID=${{ secrets.TG_THREAD_ID }}" >> .env
+          fi
+          # 显示账号数量
+          echo "已配置的账号数量: $(grep -c "USER" .env)"
 
       - name: 运行签到脚本
-        env:
-          # 基本配置
-          NS_COOKIE: ${{ secrets.NS_COOKIE }}
-          USER: ${{ secrets.USER }}
-          PASS: ${{ secrets.PASS }}
-          # NS_RANDOM: ${{ secrets.NS_RANDOM }}
-
-          # 验证码服务配置
-          SOLVER_TYPE: ${{ secrets.SOLVER_TYPE }}
-          API_BASE_URL: ${{ secrets.API_BASE_URL }}
-          CLIENTT_KEY: ${{ secrets.CLIENTT_KEY }}
-          
-          # 通知推送配置
-          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
-          TG_USER_ID: ${{ secrets.TG_USER_ID }}
-          TG_THREAD_ID: ${{ secrets.TG_THREAD_ID }}
         run: python nodeseek_sign.py
