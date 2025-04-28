@@ -1,8 +1,17 @@
 # NodeSeek-Signin
 
+<div align="center">
+  
+![NodeSeek](https://img.shields.io/badge/NodeSeek-自动签到-green)
+![GitHub stars](https://img.shields.io/github/stars/yowiv/NodeSeek-Signin?style=flat)
+![Python](https://img.shields.io/badge/Language-Python-blue)
+![License](https://img.shields.io/github/license/yowiv/NodeSeek-Signin)
+
+</div>
+
 ## 📝 项目介绍
 
-这是一个用于 NodeSeek 论坛自动签到的工具，支持通过 GitHub Actions 或青龙面板进行定时自动签到操作。签到模式默认为随机签到，帮助用户轻松获取论坛每日签到奖励。
+这是一个用于 NodeSeek 论坛自动签到的工具，支持通过 GitHub Actions 或青龙面板进行定时自动签到操作。签到模式默认为随机签到，帮助用户轻松获取论坛每日"鸡腿"奖励。
 
 
 ## ✨ 功能特点
@@ -10,6 +19,7 @@
 - 📅 支持 GitHub Actions 自动运行
 - 🦉 支持青龙面板定时任务
 - 🍪 支持 Cookie 或账号密码登录方式
+- 👥 支持多账号批量签到
 - 🔐 支持多种验证码解决方案
   - 自建 CloudFreed 服务（免费）
   - YesCaptcha 商业服务（付费/赠送）
@@ -24,7 +34,9 @@
 
 | 变量名称 | 必要性 | 说明 |
 | :------: | :----: | :--- |
-| `NS_COOKIE` | **建议** | NodeSeek 论坛的用户 Cookie，可在浏览器开发者工具(F12)的网络请求中获取 |
+| `NS_COOKIE` | **建议** | NodeSeek 论坛的用户 Cookie，可在浏览器开发者工具(F12)的网络请求中获取，多账号用`&`或换行符分隔 |
+| `USER`/`USER1` | 可选 | NodeSeek 论坛用户名，当 Cookie 失效时使用 |
+| `PASS`/`PASS1` | 可选 | NodeSeek 论坛密码 |
 | `TG_BOT_TOKEN` | 可选 | Telegram 机器人的 Token，用于通知签到结果 |
 | `TG_USER_ID` | 可选 | Telegram 用户 ID，用于接收通知 |
 | `TG_THREAD_ID` | 可选 | Telegram 超级群组话题 ID，用于在特定话题中发送通知 |
@@ -57,8 +69,8 @@ docker run -itd   --name cloudflyer   -p 3000:3000   --restart unless-stopped   
 | :------: | :--- |
 | `API_BASE_URL` | CloudFreed 服务地址，如 `http://192.168.1.100:3000` |
 | `CLIENTT_KEY` | CloudFreed 服务的客户端密钥 |
-| `USER` | NodeSeek 论坛用户名 |
-| `PASS` | NodeSeek 论坛密码 |
+| `USER1`/`USER2`... | NodeSeek 论坛用户名 |
+| `PASS1`/`PASS2`... | NodeSeek 论坛密码 |
 | `SOLVER_TYPE` | 设置为 `turnstile`（默认值） |
 
 #### 方案B：YesCaptcha 商业服务（推荐无法自建服务的用户）
@@ -70,33 +82,73 @@ docker run -itd   --name cloudflyer   -p 3000:3000   --restart unless-stopped   
 | 变量名称 | 说明 |
 | :------: | :--- |
 | `CLIENTT_KEY` | YesCaptcha 的 API 密钥 |
-| `USER` | NodeSeek 论坛用户名 |
-| `PASS` | NodeSeek 论坛密码 |
+| `USER1`/`USER2`... | NodeSeek 论坛用户名 |
+| `PASS1`/`PASS2`... | NodeSeek 论坛密码 |
 | `SOLVER_TYPE` | 设置为 `yescaptcha` |
 
 > **提示**：YesCaptcha 提供两个服务节点，可根据网络情况选择：
 > - 国际节点：`https://api.yescaptcha.com`（默认）
 > - 国内节点：`https://cn.yescaptcha.com`
 
+### 多账号配置方法
+
+本脚本支持多账号签到，配置方法如下：
+
+#### 1. Cookie方式
+
+使用 `NS_COOKIE` 环境变量设置多账号，账号之间使用 `&` 或换行符分隔：
+
+```
+# 使用 & 分隔多个Cookie
+NS_COOKIE=Cookie1&Cookie2&Cookie3
+
+# 或使用换行符分隔
+NS_COOKIE=Cookie1
+Cookie2
+Cookie3
+```
+
+#### 2. 用户名密码方式
+
+使用编号变量设置多账号：
+
+```
+# 第一个账号
+USER1=用户名1
+PASS1=密码1
+
+# 第二个账号
+USER2=用户名2
+PASS2=密码2
+
+# 第三个账号
+USER3=用户名3
+PASS3=密码3
+
+# 依此类推...
+```
+
+> **注意**：基本的 `USER` 和 `PASS` 变量也会被识别，系统会自动检测所有设置的账号，并依次执行签到操作。
+
 ## 🔧 环境变量完整说明
 
 | 变量名称 | 必要性 | 默认值 | 说明 |
 | :------: | :----: | :----: | :--- |
-| `NS_COOKIE` | 建议 | - | NodeSeek 论坛的用户 Cookie |
-| `USER` | 可选 | - | NodeSeek 论坛用户名，当 Cookie 失效时使用 |
-| `PASS` | 可选 | - | NodeSeek 论坛密码 |
+| `NS_COOKIE` | 建议 | - | NodeSeek 论坛的用户 Cookie，多账号使用`&`或换行符分隔 |
+| `USER1`、`USER2`... | 可选 | - | NodeSeek 论坛用户名，当 Cookie 失效时使用 |
+| `PASS1`、`PASS2`... | 可选 | - | NodeSeek 论坛密码 |
 | `NS_RANDOM` | 可选 | true | 是否随机签到（true/false） |
-| `SOLVER_TYPE` | 可选 | turnstile | 验证码解决方案（turnstile/yescaptcha） |
+| `SOLVER_TYPE` | 可选 | yescaptcha | 验证码解决方案（turnstile/yescaptcha） |
 | `API_BASE_URL` | 条件必需 | - | CloudFreed 服务地址，当 SOLVER_TYPE=turnstile 时必填 |
 | `CLIENTT_KEY` | 必需 | - | 验证码服务客户端密钥 |
 | 各类通知变量 | 可选 | - | 支持多种推送通知平台配置 |
 
 ## 📊 验证码服务对比
 
-| 服务 | 类型 | 优点 | 缺点 |
-| :--: | :--: | :--- | :--- |
-| CloudFreed | 自建服务 | 免费、无次数限制 | 需要自行部署维护 
-| YesCaptcha | 商业服务 | 稳定可靠、易于配置 | 付费服务（有免费额度） 
+| 服务 | 类型 | 优点 | 缺点 | 推荐指数 |
+| :--: | :--: | :--- | :--- | :------: |
+| CloudFreed | 自建服务 | 免费、无次数限制 | 需要自行部署维护 | ★★★★☆ |
+| YesCaptcha | 商业服务 | 稳定可靠、易于配置 | 付费服务（有免费额度） | ★★★★★ |
 
 ## ⚠️ 免责声明
 
