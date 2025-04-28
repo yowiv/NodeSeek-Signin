@@ -33,7 +33,6 @@ def load_send():
 
 load_send()
 
-
 def session_login():
     # 根据环境变量选择使用哪个验证码解决器
     try:
@@ -106,8 +105,6 @@ def session_login():
             
             cookie_dict = session.cookies.get_dict()
             cookie_string = '; '.join([f"{name}={value}" for name, value in cookie_dict.items()])
-            #print(f"获取到的Cookie: {cookie_string}")
-            
             return cookie_string
         else:
             message = response_data.get('message', '登录失败')
@@ -117,7 +114,6 @@ def session_login():
         print("登录异常:", e)
         print("实际响应内容:", response.text if 'response' in locals() else "没有响应")
         return None
-
 
 def sign():
     if not NS_COOKIE:
@@ -178,6 +174,16 @@ if __name__ == "__main__":
             if cookie:
                 print("登录成功，使用新Cookie签到")
                 NS_COOKIE = cookie
+                gh_env = os.environ.get("GITHUB_ENV")
+                if gh_env:
+                    try:
+                        with open(gh_env, "a", encoding="utf-8") as f:
+                            f.write(f"NS_COOKIE={NS_COOKIE}\n")
+                        print("新的 NS_COOKIE 已写入 GITHUB_ENV 环境变量文件")
+                    except Exception as e:
+                        print(f"写入 GITHUB_ENV 环境变量文件失败: {e}")
+                else:
+                    print("未检测到 GITHUB_ENV 环境变量，跳过写入")
                 sign_result, sign_message = sign()
                 
                 status = "签到成功" if sign_result in ["success", "already_signed"] else "签到失败"
