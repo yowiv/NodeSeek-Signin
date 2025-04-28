@@ -2,44 +2,52 @@ name: nodeseek鸡腿签到
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   schedule:
-    - cron: '00 16 * * *'  # 北京时间 00:00 (UTC+8)
+    - cron: '00 16 * * *'  # 北京时间 00:00 (UTC+8)，对应UTC时间 16:00
   workflow_dispatch:
 
 jobs:
   run-nodeseek-sign:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        # 定义要跑几组账号，把 id 设置成 Secret 后缀
-        include:
-          - id: "1"
-          - id: "2"
-          # 如果有更多账号，再加 - id: "3"、"4"……
-    steps:
-      - name: 检出代码
-        uses: actions/checkout@v3
 
-      - name: 配置 Python
+    steps:
+      - name: 检出代码仓库
+        uses: actions/checkout@v3
+      
+      - name: 配置Python环境
         uses: actions/setup-python@v2
         with:
           python-version: '3.11.8'
 
-      - name: 安装依赖
+      - name: 安装依赖包
         run: pip install curl_cffi requests
 
-      - name: 运行签到脚本（账号 #${{ matrix.id }})
+      - name: 运行签到脚本
         env:
-          NS_COOKIE:    ${{ secrets.NS_COOKIE }}
-          USER:         ${{ secrets['USER'  + matrix.id] }}
-          PASS:         ${{ secrets['PASS'  + matrix.id] }}
-          SOLVER_TYPE:  ${{ secrets.SOLVER_TYPE }}
+          # 基本配置
+          NS_COOKIE: ${{ secrets.NS_COOKIE }}
+          USER: ${{ secrets.USER }}
+          PASS: ${{ secrets.PASS }}
+          USER1: ${{ secrets.USER1 }}
+          PASS1: ${{ secrets.PASS1 }}
+          USER2: ${{ secrets.USER2 }}
+          PASS2: ${{ secrets.PASS2 }}
+          USER3: ${{ secrets.USER3 }}
+          PASS3: ${{ secrets.PASS3 }}
+          USER4: ${{ secrets.USER4 }}
+          PASS4: ${{ secrets.PASS4 }}
+          USER5: ${{ secrets.USER5 }}
+          PASS5: ${{ secrets.PASS5 }}
+
+          # 验证码服务配置
+          SOLVER_TYPE: ${{ secrets.SOLVER_TYPE }}
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
-          CLIENTT_KEY:  ${{ secrets.CLIENTT_KEY }}
+          CLIENTT_KEY: ${{ secrets.CLIENTT_KEY }}
+          
+          # 通知推送配置
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
-          TG_USER_ID:   ${{ secrets.TG_USER_ID }}
+          TG_USER_ID: ${{ secrets.TG_USER_ID }}
           TG_THREAD_ID: ${{ secrets.TG_THREAD_ID }}
-        run: |
-          echo "===== 开始第 ${{ matrix.id }} 号账号签到 ====="
-          python nodeseek_sign.py
+        run: python nodeseek_sign.py
