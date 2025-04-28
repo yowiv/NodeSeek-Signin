@@ -212,6 +212,7 @@ def parse_cookies(cookie_str):
     return [c.strip() for c in cookies if c.strip()]
 
 if __name__ == "__main__":
+
     # 结果统计
     success_count = 0
     already_signed_count = 0
