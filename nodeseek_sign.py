@@ -12,6 +12,38 @@ CLIENTT_KEY = os.environ.get("CLIENTT_KEY", "")
 NS_RANDOM = os.environ.get("NS_RANDOM", "true")
 SOLVER_TYPE = os.environ.get("SOLVER_TYPE", "turnstile")
 
+def save_cookie_to_github_var(var_name: str, cookie: str):
+    """将Cookie保存到GitHub仓库变量中"""
+    import requests as py_requests
+    token = os.environ.get("GH_PAT")
+    repo = os.environ.get("GITHUB_REPOSITORY")
+    if not token or not repo:
+        print("GH_PAT 或 GITHUB_REPOSITORY 未设置，跳过变量更新")
+        return
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json"
+    }
+
+    url_check = f"https://api.github.com/repos/{repo}/actions/variables/{var_name}"
+    url_create = f"https://api.github.com/repos/{repo}/actions/variables"
+
+    data = {"name": var_name, "value": cookie}
+
+    response = py_requests.patch(url_check, headers=headers, json=data)
+    if response.status_code == 204:
+        print(f"{var_name} 更新成功")
+    elif response.status_code == 404:
+        print(f"{var_name} 不存在，尝试创建...")
+        response = py_requests.post(url_create, headers=headers, json=data)
+        if response.status_code == 201:
+            print(f"{var_name} 创建成功")
+        else:
+            print("创建失败:", response.status_code, response.text)
+    else:
+        print("设置失败:", response.status_code, response.text)
+
 # 多账号支持
 def parse_multi_accounts():
     """解析环境变量中的多账号信息，支持&和换行符作为分隔符"""
@@ -228,6 +260,8 @@ if __name__ == "__main__":
     
     # 存储所有账号的通知信息
     all_messages = []
+    # 用于收集有效的Cookie
+    valid_cookies = []
     
     # 循环处理每个账号
     for i, account in enumerate(accounts):
@@ -245,6 +279,8 @@ if __name__ == "__main__":
             status = "签到成功" if sign_result == "success" else "今天已经签到过了"
             print(f"{account_name}: {status}")
             all_messages.append(f"{account_name}: {sign_message}")
+            # 收集有效的Cookie
+            valid_cookies.append(account["cookie"])
         else:
             # 签到失败或没有Cookie，尝试登录
             if account["user"] and account["pass"]:
@@ -261,6 +297,8 @@ if __name__ == "__main__":
                     message = f"{account_name}: {sign_message}"
                     if sign_result in ["success", "already_signed"]:
                         message += f"\nCookie: {cookie}"
+                        # 收集新获取的有效Cookie
+                        valid_cookies.append(cookie)
                     all_messages.append(message)
                 else:
                     print(f"{account_name}: 登录失败")
@@ -272,3 +310,16 @@ if __name__ == "__main__":
     # 发送合并后的通知
     if hadsend and all_messages:
         send("nodeseek多账号签到", "\n\n".join(all_messages))
+    
+    # 保存所有有效Cookie到GitHub变量
+    if valid_cookies and os.environ.get("GITHUB_ACTIONS") == "true":
+        print("\n===== 保存Cookie到GitHub变量 =====")
+        combined_cookies = "&".join(valid_cookies)
+        print(f"共收集到{len(valid_cookies)}个有效Cookie")
+        
+        # 将Cookie保存到GitHub变量
+        try:
+            save_cookie_to_github_var("NS_COOKIE", combined_cookies)
+            print("Cookie已成功保存到GitHub变量")
+        except Exception as e:
+            print(f"保存Cookie时出现错误: {e}")

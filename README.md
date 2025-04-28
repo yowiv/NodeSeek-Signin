@@ -24,6 +24,7 @@
   - 自建 CloudFreed 服务（免费）
   - YesCaptcha 商业服务（付费/赠送）
 - 📱 支持多种通知推送渠道
+- 🔄 自动更新Cookie并保存至GitHub变量
 
 ## 🚀 使用方法
 
@@ -40,6 +41,7 @@
 | `TG_BOT_TOKEN` | 可选 | Telegram 机器人的 Token，用于通知签到结果 |
 | `TG_USER_ID` | 可选 | Telegram 用户 ID，用于接收通知 |
 | `TG_THREAD_ID` | 可选 | Telegram 超级群组话题 ID，用于在特定话题中发送通知 |
+| `GH_PAT` | 可选 | GitHub Personal Access Token，用于自动更新Cookie变量 |
 
 > **注意**：若仅设置 Cookie 但未配置验证码服务，当 Cookie 过期后无法自动登录获取新 Cookie。
 
@@ -130,6 +132,37 @@ PASS3=密码3
 
 > **注意**：基本的 `USER` 和 `PASS` 变量也会被识别，系统会自动检测所有设置的账号，并依次执行签到操作。
 
+## 🔑 GitHub Personal Access Token 设置
+
+为了实现自动更新Cookie功能，脚本需要使用GitHub Personal Access Token (PAT)将获取的新Cookie保存到仓库变量中。
+
+### 1. 创建Personal Access Token
+
+1. 登录您的GitHub账户
+2. 点击右上角头像 → 选择 "Settings"（设置）
+3. 滚动到页面底部 → 点击 "Developer settings"（开发者设置）
+4. 在左侧菜单选择 "Personal access tokens" → 点击 "Tokens (classic)"
+5. 点击 "Generate new token" → 选择 "Generate new token (classic)"
+6. 配置token：
+   - 名称：填写一个描述性名称，如 "NodeSeek签到脚本"
+   - 过期时间：根据需要选择（推荐90天或更长）
+   - 勾选权限：
+     - `repo` (完整的仓库访问权限)
+     - `workflow` (用于管理GitHub Actions)
+7. 点击页面底部的 "Generate token" 按钮
+8. **立即复制生成的token**，关闭页面后将无法再次查看
+
+### 2. 添加到仓库Secrets
+
+1. 进入您的NodeSeek-Signin仓库
+2. 点击 "Settings" → "Secrets and variables" → "Actions"
+3. 点击 "New repository secret"
+4. 名称填写：`GH_PAT`
+5. 值填写：刚才复制的Personal Access Token
+6. 点击 "Add secret" 保存
+
+完成以上设置后，签到脚本可以自动将有效的Cookie保存到GitHub仓库变量中，下次运行时直接使用，减少重复登录和验证码操作。
+
 ## 🔧 环境变量完整说明
 
 | 变量名称 | 必要性 | 默认值 | 说明 |
@@ -138,9 +171,10 @@ PASS3=密码3
 | `USER1`、`USER2`... | 可选 | - | NodeSeek 论坛用户名，当 Cookie 失效时使用 |
 | `PASS1`、`PASS2`... | 可选 | - | NodeSeek 论坛密码 |
 | `NS_RANDOM` | 可选 | true | 是否随机签到（true/false） |
-| `SOLVER_TYPE` | 可选 | yescaptcha | 验证码解决方案（turnstile/yescaptcha） |
+| `SOLVER_TYPE` | 可选 | turnstile | 验证码解决方案（turnstile/yescaptcha） |
 | `API_BASE_URL` | 条件必需 | - | CloudFreed 服务地址，当 SOLVER_TYPE=turnstile 时必填 |
 | `CLIENTT_KEY` | 必需 | - | 验证码服务客户端密钥 |
+| `GH_PAT` | 可选 | - | GitHub Personal Access Token，用于自动更新Cookie变量 |
 | 各类通知变量 | 可选 | - | 支持多种推送通知平台配置 |
 
 ## 📊 验证码服务对比
