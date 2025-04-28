@@ -2,65 +2,44 @@ name: nodeseek鸡腿签到
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   schedule:
-    - cron: '00 16 * * *'  # 北京时间 00:00 (UTC+8)，对应UTC时间 16:00
+    - cron: '00 16 * * *'  # 北京时间 00:00 (UTC+8)
   workflow_dispatch:
 
 jobs:
   run-nodeseek-sign:
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        # 定义要跑几组账号，把 id 设置成 Secret 后缀
+        include:
+          - id: "1"
+          - id: "2"
+          # 如果有更多账号，再加 - id: "3"、"4"……
     steps:
-      - name: 检出代码仓库
+      - name: 检出代码
         uses: actions/checkout@v3
-      
-      - name: 配置Python环境
+
+      - name: 配置 Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.11.8'
 
-      - name: 安装依赖包
-        run: |
-          pip install curl_cffi requests
-          pip install python-dotenv   # 用于处理环境变量
+      - name: 安装依赖
+        run: pip install curl_cffi requests
 
-      - name: 自动生成账号配置
+      - name: 运行签到脚本（账号 #${{ matrix.id }})
+        env:
+          NS_COOKIE:    ${{ secrets.NS_COOKIE }}
+          USER:         ${{ secrets['USER'  + matrix.id] }}
+          PASS:         ${{ secrets['PASS'  + matrix.id] }}
+          SOLVER_TYPE:  ${{ secrets.SOLVER_TYPE }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          CLIENTT_KEY:  ${{ secrets.CLIENTT_KEY }}
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_USER_ID:   ${{ secrets.TG_USER_ID }}
+          TG_THREAD_ID: ${{ secrets.TG_THREAD_ID }}
         run: |
-          # 创建环境变量文件
-          echo "# 自动生成的多账号配置文件" > .env
-          # 检查并添加所有 USER/PASS 变量
-          for i in {1..10}; do
-            if [ -n "${{ secrets[format('USER{0}', i)] }}" ]; then
-              echo "USER$i=${{ secrets[format('USER{0}', i)] }}" >> .env
-            fi
-            if [ -n "${{ secrets[format('PASS{0}', i)] }}" ]; then
-              echo "PASS$i=${{ secrets[format('PASS{0}', i)] }}" >> .env
-            fi
-          done
-          # 添加基本账号
-          if [ -n "${{ secrets.USER }}" ]; then
-            echo "USER=${{ secrets.USER }}" >> .env
-          fi
-          if [ -n "${{ secrets.PASS }}" ]; then
-            echo "PASS=${{ secrets.PASS }}" >> .env
-          fi
-          # 添加Cookie和其他配置
-          if [ -n "${{ secrets.NS_COOKIE }}" ]; then
-            echo "NS_COOKIE=${{ secrets.NS_COOKIE }}" >> .env
-          fi
-          echo "SOLVER_TYPE=${{ secrets.SOLVER_TYPE }}" >> .env
-          echo "API_BASE_URL=${{ secrets.API_BASE_URL }}" >> .env
-          echo "CLIENTT_KEY=${{ secrets.CLIENTT_KEY }}" >> .env
-          # 添加通知配置
-          if [ -n "${{ secrets.TG_BOT_TOKEN }}" ]; then
-            echo "TG_BOT_TOKEN=${{ secrets.TG_BOT_TOKEN }}" >> .env
-            echo "TG_USER_ID=${{ secrets.TG_USER_ID }}" >> .env
-            echo "TG_THREAD_ID=${{ secrets.TG_THREAD_ID }}" >> .env
-          fi
-          # 显示账号数量
-          echo "已配置的账号数量: $(grep -c "USER" .env)"
-
-      - name: 运行签到脚本
-        run: python nodeseek_sign.py
+          echo "===== 开始第 ${{ matrix.id }} 号账号签到 ====="
+          python nodeseek_sign.py
