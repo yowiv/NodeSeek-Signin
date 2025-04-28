@@ -28,7 +28,6 @@ jobs:
       - name: 安装依赖包
         run: |
           pip install curl_cffi requests
-          pip install turnstile_solver yescaptcha
 
       - name: 运行签到脚本
         env:
