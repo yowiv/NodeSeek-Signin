@@ -44,6 +44,100 @@ def save_cookie_to_github_var(var_name: str, cookie: str):
     else:
         print("设置失败:", response.status_code, response.text)
 
+# 自动保存cookie到青龙面板
+def save_cookie_to_qinglong(var_name, cookie_value):
+    """将Cookie保存到青龙面板环境变量"""
+    import requests
+    import json
+    import time
+    
+    # 获取青龙面板配置
+    ql_url = os.environ.get("QL_URL")
+    client_id = os.environ.get("QL_CLIENT_ID")
+    client_secret = os.environ.get("QL_CLIENT_SECRET")
+    
+    if not all([ql_url, client_id, client_secret]):
+        print("未设置青龙面板API配置，无法保存Cookie")
+        return False
+        
+    # 获取青龙API令牌
+    token_url = f"{ql_url}/open/auth/token"
+    token_params = {
+        'client_id': client_id,
+        'client_secret': client_secret
+    }
+    
+    try:
+        token_resp = requests.get(token_url, params=token_params)
+        token_data = token_resp.json()
+        
+        if token_data.get('code') != 200:
+            print(f"获取青龙面板令牌失败: {token_data}")
+            return False
+            
+        token = token_data['data']['token']
+        
+        # 设置API请求头
+        headers = {
+            'Authorization': f'Bearer {token}',
+            'Content-Type': 'application/json'
+        }
+        
+        # 查询变量是否存在
+        envs_url = f"{ql_url}/open/envs"
+        envs_resp = requests.get(envs_url, headers=headers)
+        envs_data = envs_resp.json()
+        
+        if envs_data.get('code') != 200:
+            print(f"查询环境变量失败: {envs_data}")
+            return False
+            
+        # 查找指定变量
+        env_id = None
+        for env in envs_data['data']:
+            if env['name'] == var_name:
+                env_id = env['id']
+                break
+                
+        # 更新或创建变量
+        remarks = f"NodeSeek签到自动更新-{time.strftime('%Y-%m-%d %H:%M:%S')}"
+        
+        if env_id:  # 更新现有变量
+            update_data = {
+                "id": env_id,
+                "name": var_name,
+                "value": cookie_value,
+                "remarks": remarks
+            }
+            update_resp = requests.put(envs_url, headers=headers, json=update_data)
+            update_result = update_resp.json()
+            
+            if update_result.get('code') == 200:
+                print(f"成功更新青龙环境变量: {var_name}")
+                return True
+            else:
+                print(f"更新环境变量失败: {update_result}")
+                return False
+        else:  # 创建新变量
+            create_data = [{
+                "name": var_name,
+                "value": cookie_value,
+                "remarks": remarks
+            }]
+            create_resp = requests.post(envs_url, headers=headers, json=create_data)
+            create_result = create_resp.json()
+            
+            if create_result.get('code') == 200:
+                print(f"成功创建青龙环境变量: {var_name}")
+                return True
+            else:
+                print(f"创建环境变量失败: {create_result}")
+                return False
+                
+    except Exception as e:
+        print(f"调用青龙API出错: {e}")
+        return False
+    
 # 多账号支持
 def parse_multi_accounts():
     """解析环境变量中的多账号信息，支持&和换行符作为分隔符"""
@@ -312,14 +406,36 @@ if __name__ == "__main__":
         send("nodeseek多账号签到", "\n\n".join(all_messages))
     
     # 保存所有有效Cookie到GitHub变量
-    if valid_cookies and os.environ.get("GITHUB_ACTIONS") == "true":
+# 保存所有有效Cookie
+if valid_cookies:
+    combined_cookies = "&".join(valid_cookies)
+    print(f"共收集到{len(valid_cookies)}个有效Cookie")
+    
+    # 检查是否在GitHub Actions环境
+    if os.environ.get("GITHUB_ACTIONS") == "true":
         print("\n===== 保存Cookie到GitHub变量 =====")
-        combined_cookies = "&".join(valid_cookies)
-        print(f"共收集到{len(valid_cookies)}个有效Cookie")
-        
         # 将Cookie保存到GitHub变量
         try:
             save_cookie_to_github_var("NS_COOKIE", combined_cookies)
             print("Cookie已成功保存到GitHub变量")
         except Exception as e:
-            print(f"保存Cookie时出现错误: {e}")
+            print(f"保存Cookie到GitHub变量时出现错误: {e}")
+    
+    # 检查是否存在青龙面板配置
+    elif os.environ.get("QL_URL"):
+        print("\n===== 保存Cookie到青龙面板环境变量 =====")
+        # 将Cookie保存到青龙面板环境变量
+        try:
+            save_result = save_cookie_to_qinglong("NS_COOKIE", combined_cookies)
+            if save_result:
+                print("Cookie已成功保存到青龙面板环境变量")
+            else:
+                print("保存Cookie到青龙面板环境变量失败")
+        except Exception as e:
+            print(f"保存Cookie到青龙面板环境变量时出现错误: {e}")
+    else:
+        print("\n未检测到GitHub Actions或青龙面板环境，新Cookie将不会被自动保存")
+        if len(valid_cookies) > 0:
+            print("\n以下是有效的Cookie，可以手动更新：")
+            for i, cookie in enumerate(valid_cookies):
+                print(f"账号{i+1}: {cookie}")
