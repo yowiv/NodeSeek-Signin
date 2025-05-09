@@ -243,7 +243,9 @@ if __name__ == "__main__":
     cookie_list = [c.strip() for c in cookie_list if c.strip()]
     
     account_index = 0 
-    env_index = 0      
+    env_index = 0
+    cookies_updated = False  # 标记Cookie是否有更新
+    
     while True:
         account_index += 1  
         
@@ -294,23 +296,13 @@ if __name__ == "__main__":
                 result, msg = sign(new_cookie)
                 if result in ["success", "already"]:
                     print(f"账号 {account_index} 签到成功: {msg}")
+                    cookies_updated = True  # 标记Cookie已更新
                     
-                    if len(cookie_list) > 0:
-                        if account_index <= len(cookie_list):
-                            cookie_list[account_index-1] = new_cookie
-                        else:
-                            cookie_list.append(new_cookie)
-                        all_cookies_new = "&".join(cookie_list)
-                        
-                        try:
-                            save_cookie("NS_COOKIE", all_cookies_new)
-                        except Exception as e:
-                            print(f"保存变量异常: {e}")
+                    # 仅更新内存中的Cookie列表，不立即保存环境变量
+                    if account_index <= len(cookie_list):
+                        cookie_list[account_index-1] = new_cookie
                     else:
-                        try:
-                            save_cookie("NS_COOKIE", new_cookie)
-                        except Exception as e:
-                            print(f"保存变量异常: {e}")
+                        cookie_list.append(new_cookie)
                     
                     if hadsend:
                         try:
@@ -326,3 +318,13 @@ if __name__ == "__main__":
                         send("NodeSeek 登录失败", f"账号{account_index}登录失败")
                     except Exception as e:
                         print(f"发送通知失败: {e}")
+    
+    # 所有账号处理完毕后，如果有Cookie更新，再一次性保存所有Cookie
+    if cookies_updated and cookie_list:
+        print("\n==== 处理完毕，保存更新后的Cookie ====")
+        all_cookies_new = "&".join(cookie_list)
+        try:
+            save_cookie("NS_COOKIE", all_cookies_new)
+            print("所有Cookie已成功保存")
+        except Exception as e:
+            print(f"保存Cookie变量异常: {e}")
