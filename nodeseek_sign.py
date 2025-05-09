@@ -228,7 +228,6 @@ def sign(ns_cookie, NS_RANDOM="true"):
     except Exception as e:
         return "error", str(e)
 
-
 # ---------------- 主流程 ----------------
 if __name__ == "__main__":
     solver_type = os.getenv("SOLVER_TYPE", "yescaptcha")
