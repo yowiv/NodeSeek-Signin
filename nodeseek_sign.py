@@ -263,6 +263,8 @@ if __name__ == "__main__":
     
     print(f"共发现 {len(accounts)} 个账户配置，{len(cookie_list)} 个现有Cookie")
     
+    if len(cookie_list) > len(accounts):
+        cookie_list = cookie_list[:len(accounts)]
     while len(cookie_list) < len(accounts):
         cookie_list.append("")
     
