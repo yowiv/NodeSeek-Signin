@@ -239,35 +239,41 @@ if __name__ == "__main__":
     env_type = detect_environment()
     print(f"当前运行环境: {env_type}")
     
+    accounts = []
+    
+    user = os.getenv("USER")
+    password = os.getenv("PASS")
+    if user and password:
+        accounts.append({"user": user, "password": password})
+    
+    index = 1
+    while True:
+        user = os.getenv(f"USER{index}")
+        password = os.getenv(f"PASS{index}")
+        if user and password:
+            accounts.append({"user": user, "password": password})
+            index += 1
+        else:
+            break
+    
+    # 读取现有Cookie
     all_cookies = os.getenv("NS_COOKIE", "")
     cookie_list = all_cookies.split("&")
     cookie_list = [c.strip() for c in cookie_list if c.strip()]
     
-    account_index = 0 
-    env_index = 0
+    print(f"共发现 {len(accounts)} 个账户配置，{len(cookie_list)} 个现有Cookie")
+    
+    while len(cookie_list) < len(accounts):
+        cookie_list.append("")
+    
     cookies_updated = False  # 标记Cookie是否有更新
     
-    while True:
-        account_index += 1  
-        
-        if account_index == 1:
-            user = os.getenv("USER")
-            password = os.getenv("PASS")
-        else:
-            env_index += 1  
-            user = os.getenv(f"USER{env_index}")
-            password = os.getenv(f"PASS{env_index}")
-        
-        cookie = ""
-        if account_index <= len(cookie_list):
-            cookie = cookie_list[account_index-1]
-        
-        if not user and not password and not cookie:
-            if account_index > 1:
-                break
-            else:
-                print("未找到有效账号信息，退出")
-                break
+    # 处理每个账户
+    for i, account in enumerate(accounts):
+        account_index = i + 1
+        user = account["user"]
+        password = account["password"]
+        cookie = cookie_list[i] if i < len(cookie_list) else ""
         
         display_user = user if user else f"账号{account_index}"
         
@@ -301,9 +307,9 @@ if __name__ == "__main__":
                     print(f"账号 {display_user} 签到成功: {msg}")
                     cookies_updated = True  # 标记Cookie已更新
                     
-                    # 仅更新内存中的Cookie列表，不立即保存环境变量
-                    if account_index <= len(cookie_list):
-                        cookie_list[account_index-1] = new_cookie
+                    # 更新Cookie列表
+                    if i < len(cookie_list):
+                        cookie_list[i] = new_cookie
                     else:
                         cookie_list.append(new_cookie)
                     
