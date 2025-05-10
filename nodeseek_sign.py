@@ -202,8 +202,9 @@ def session_login(user, password, solver_type, api_base_url, client_key):
     except Exception as e:
         print("登录异常:", e)
         return None
+
 # ---------------- 签到逻辑 ----------------
-def sign(ns_cookie, NS_RANDOM="true"):
+def sign(ns_cookie, ns_random):
     if not ns_cookie:
         return "invalid", "无有效Cookie"
         
@@ -214,7 +215,7 @@ def sign(ns_cookie, NS_RANDOM="true"):
         'Cookie': ns_cookie
     }
     try:
-        url = f"https://www.nodeseek.com/api/attendance?random={NS_RANDOM}"
+        url = f"https://www.nodeseek.com/api/attendance?random={ns_random}"
         response = requests.post(url, headers=headers, impersonate="chrome110")
         data = response.json()
         msg = data.get("message", "")
@@ -233,7 +234,8 @@ if __name__ == "__main__":
     solver_type = os.getenv("SOLVER_TYPE", "yescaptcha")
     api_base_url = os.getenv("API_BASE_URL", "")
     client_key = os.getenv("CLIENTT_KEY", "") 
-    
+    ns_random = os.getenv("NS_RANDOM", "true")
+
     env_type = detect_environment()
     print(f"当前运行环境: {env_type}")
     
@@ -270,7 +272,7 @@ if __name__ == "__main__":
         print(f"\n==== 账号 {account_index} 开始签到 ====")
         
         if cookie:
-            result, msg = sign(cookie)
+            result, msg = sign(cookie, ns_random)
         else:
             result, msg = "invalid", "无Cookie"
 
@@ -292,7 +294,7 @@ if __name__ == "__main__":
             new_cookie = session_login(user, password, solver_type, api_base_url, client_key)
             if new_cookie:
                 print("登录成功，重新签到...")
-                result, msg = sign(new_cookie)
+                result, msg = sign(new_cookie, ns_random)
                 if result in ["success", "already"]:
                     print(f"账号 {account_index} 签到成功: {msg}")
                     cookies_updated = True  # 标记Cookie已更新
