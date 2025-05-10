@@ -240,12 +240,12 @@ if __name__ == "__main__":
     print(f"当前运行环境: {env_type}")
     
     accounts = []
-    
+
     user = os.getenv("USER")
     password = os.getenv("PASS")
     if user and password:
         accounts.append({"user": user, "password": password})
-    
+
     index = 1
     while True:
         user = os.getenv(f"USER{index}")
