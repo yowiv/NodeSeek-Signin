@@ -269,7 +269,9 @@ if __name__ == "__main__":
                 print("未找到有效账号信息，退出")
                 break
         
-        print(f"\n==== 账号 {account_index} 开始签到 ====")
+        display_user = user if user else f"账号{account_index}"
+        
+        print(f"\n==== 账号 {display_user} 开始签到 ====")
         
         if cookie:
             result, msg = sign(cookie, ns_random)
@@ -277,18 +279,18 @@ if __name__ == "__main__":
             result, msg = "invalid", "无Cookie"
 
         if result in ["success", "already"]:
-            print(f"账号 {account_index} 签到成功: {msg}")
+            print(f"账号 {display_user} 签到成功: {msg}")
             
             if hadsend:
                 try:
-                    send("NodeSeek 签到", f"账号{account_index}签到成功：{msg}")
+                    send("NodeSeek 签到", f"账号 {display_user} 签到成功：{msg}")
                 except Exception as e:
                     print(f"发送通知失败: {e}")
         else:
             print(f"签到失败或无效: {msg}")
             print("尝试重新登录...")
             if not user or not password:
-                print(f"账号 {account_index} 无法登录: 缺少用户名或密码")
+                print(f"账号 {display_user} 无法登录: 缺少用户名或密码")
                 continue
                 
             new_cookie = session_login(user, password, solver_type, api_base_url, client_key)
@@ -296,7 +298,7 @@ if __name__ == "__main__":
                 print("登录成功，重新签到...")
                 result, msg = sign(new_cookie, ns_random)
                 if result in ["success", "already"]:
-                    print(f"账号 {account_index} 签到成功: {msg}")
+                    print(f"账号 {display_user} 签到成功: {msg}")
                     cookies_updated = True  # 标记Cookie已更新
                     
                     # 仅更新内存中的Cookie列表，不立即保存环境变量
@@ -307,16 +309,16 @@ if __name__ == "__main__":
                     
                     if hadsend:
                         try:
-                            send("NodeSeek 签到", f"账号{account_index}签到成功：{msg}")
+                            send("NodeSeek 签到", f"账号 {display_user} 签到成功：{msg}")
                         except Exception as e:
                             print(f"发送通知失败: {e}")
                 else:
-                    print(f"账号 {account_index} 签到失败: {msg}")
+                    print(f"账号 {display_user} 签到失败: {msg}")
             else:
-                print(f"账号 {account_index} 登录失败")
+                print(f"账号 {display_user} 登录失败")
                 if hadsend:
                     try:
-                        send("NodeSeek 登录失败", f"账号{account_index}登录失败")
+                        send("NodeSeek 登录失败", f"账号 {display_user} 登录失败")
                     except Exception as e:
                         print(f"发送通知失败: {e}")
     
