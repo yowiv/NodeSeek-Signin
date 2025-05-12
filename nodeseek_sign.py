@@ -4,7 +4,7 @@ import os
 import time
 from curl_cffi import requests
 from yescaptcha import YesCaptchaSolver, YesCaptchaSolverError
-
+from turnstile_solver import TurnstileSolver, TurnstileSolverError
 # ---------------- 通知模块动态加载 ----------------
 hadsend = False
 send = None
@@ -97,6 +97,9 @@ def delete_ql_env(var_name: str):
         else:
             print(f"未找到环境变量: {var_name}")
             return True
+    except (TurnstileSolverError, YesCaptchaSolverError) as e:
+        print(f"验证码解析错误: {e}")
+        return None
     except Exception as e:
         print(f"删除环境变量异常: {str(e)}")
         return False
@@ -150,10 +153,18 @@ def save_cookie(var_name: str, cookie: str):
 # ---------------- 登录逻辑 ----------------
 def session_login(user, password, solver_type, api_base_url, client_key):
     try:
-        solver = YesCaptchaSolver(
-            api_base_url=api_base_url or "https://api.yescaptcha.com",
-            client_key=client_key
-        ) if solver_type.lower() == "yescaptcha" else None
+        if solver_type.lower() == "yescaptcha":
+            print("正在使用 YesCaptcha 解决验证码...")
+            solver = YesCaptchaSolver(
+                api_base_url=api_base_url or "https://api.yescaptcha.com",
+                client_key=client_key
+            )
+        else:  # 默认使用 turnstile_solver
+            print("正在使用 TurnstileSolver 解决验证码...")
+            solver = TurnstileSolver(
+                api_base_url=api_base_url,
+                client_key=client_key
+            )
 
         token = solver.solve(
             url="https://www.nodeseek.com/signIn.html",
@@ -231,7 +242,7 @@ def sign(ns_cookie, ns_random):
 
 # ---------------- 主流程 ----------------
 if __name__ == "__main__":
-    solver_type = os.getenv("SOLVER_TYPE", "yescaptcha")
+    solver_type = os.getenv("SOLVER_TYPE", "turnstile")
     api_base_url = os.getenv("API_BASE_URL", "")
     client_key = os.getenv("CLIENTT_KEY", "") 
     ns_random = os.getenv("NS_RANDOM", "true")
@@ -268,9 +279,8 @@ if __name__ == "__main__":
     while len(cookie_list) < len(accounts):
         cookie_list.append("")
     
-    cookies_updated = False  # 标记Cookie是否有更新
+    cookies_updated = False
     
-    # 处理每个账户
     for i, account in enumerate(accounts):
         account_index = i + 1
         user = account["user"]
@@ -307,9 +317,8 @@ if __name__ == "__main__":
                 result, msg = sign(new_cookie, ns_random)
                 if result in ["success", "already"]:
                     print(f"账号 {display_user} 签到成功: {msg}")
-                    cookies_updated = True  # 标记Cookie已更新
+                    cookies_updated = True
                     
-                    # 更新Cookie列表
                     if i < len(cookie_list):
                         cookie_list[i] = new_cookie
                     else:
@@ -330,7 +339,6 @@ if __name__ == "__main__":
                     except Exception as e:
                         print(f"发送通知失败: {e}")
     
-    # 所有账号处理完毕后，如果有Cookie更新，再一次性保存所有Cookie
     if cookies_updated and cookie_list:
         print("\n==== 处理完毕，保存更新后的Cookie ====")
         all_cookies_new = "&".join(cookie_list)
