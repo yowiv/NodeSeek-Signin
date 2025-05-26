@@ -2,6 +2,8 @@
 
 import os
 import time
+import json
+from datetime import datetime, timedelta
 from curl_cffi import requests
 from yescaptcha import YesCaptchaSolver, YesCaptchaSolverError
 from turnstile_solver import TurnstileSolver, TurnstileSolverError
@@ -240,6 +242,105 @@ def sign(ns_cookie, ns_random):
     except Exception as e:
         return "error", str(e)
 
+# ---------------- 查询签到收益统计函数 ----------------
+def get_signin_stats(ns_cookie, days=30):
+    """查询指定天数内的签到收益统计"""
+    if not ns_cookie:
+        return None, "无有效Cookie"
+        
+    headers = {
+        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
+        'origin': "https://www.nodeseek.com",
+        'referer': "https://www.nodeseek.com/board",
+        'Cookie': ns_cookie
+    }
+    
+    try:
+        # 获取多页数据以确保覆盖指定天数
+        all_records = []
+        page = 1
+        cutoff_date = datetime.now() - timedelta(days=days)
+        
+        while page <= 10:  # 最多查询10页，防止无限循环
+            url = f"https://www.nodeseek.com/api/account/credit/page-{page}"
+            response = requests.get(url, headers=headers, impersonate="chrome110")
+            data = response.json()
+            
+            if not data.get("success") or not data.get("data"):
+                break
+                
+            records = data.get("data", [])
+            if not records:
+                break
+                
+            # 检查最后一条记录的时间，如果超出范围就停止
+            last_record_time = datetime.fromisoformat(records[-1][3].replace('Z', '+00:00'))
+            if last_record_time.replace(tzinfo=None) < cutoff_date:
+                for record in records:
+                    record_time = datetime.fromisoformat(record[3].replace('Z', '+00:00'))
+                    if record_time.replace(tzinfo=None) >= cutoff_date:
+                        all_records.append(record)
+                break
+            else:
+                all_records.extend(records)
+                
+            page += 1
+            time.sleep(0.5)
+        
+        # 筛选签到收益记录
+        signin_records = []
+        for record in all_records:
+            amount, balance, description, timestamp = record
+            record_time = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+            
+            # 只统计指定天数内的签到收益
+            if (record_time.replace(tzinfo=None) >= cutoff_date and 
+                "签到收益" in description and "鸡腿" in description):
+                signin_records.append({
+                    'amount': amount,
+                    'date': record_time.strftime('%Y-%m-%d'),
+                    'description': description
+                })
+        
+        if not signin_records:
+            return {
+                'total_amount': 0,
+                'average': 0,
+                'days_count': 0,
+                'records': [],
+                'period': f"最近{days}天"
+            }, "查询成功，但没有找到签到记录"
+        
+        # 统计数据
+        total_amount = sum(record['amount'] for record in signin_records)
+        days_count = len(signin_records)
+        average = round(total_amount / days_count, 2) if days_count > 0 else 0
+        
+        stats = {
+            'total_amount': total_amount,
+            'average': average,
+            'days_count': days_count,
+            'records': signin_records,
+            'period': f"最近{days}天"
+        }
+        
+        return stats, "查询成功"
+        
+    except Exception as e:
+        return None, f"查询异常: {str(e)}"
+
+# ---------------- 显示签到统计信息 ----------------
+def print_signin_stats(stats, account_name):
+    """打印签到统计信息"""
+    if not stats:
+        return
+        
+    print(f"\n==== {account_name} 签到收益统计 ({stats['period']}) ====")
+    print(f"签到天数: {stats['days_count']} 天")
+    print(f"总获得鸡腿: {stats['total_amount']} 个")
+    print(f"平均每日鸡腿: {stats['average']} 个")
+    
+
 # ---------------- 主流程 ----------------
 if __name__ == "__main__":
     solver_type = os.getenv("SOLVER_TYPE", "turnstile")
@@ -252,6 +353,7 @@ if __name__ == "__main__":
     
     accounts = []
 
+    # 先收集账号密码配置
     user = os.getenv("USER")
     password = os.getenv("PASS")
     if user and password:
@@ -274,15 +376,23 @@ if __name__ == "__main__":
     
     print(f"共发现 {len(accounts)} 个账户配置，{len(cookie_list)} 个现有Cookie")
     
-    if len(cookie_list) > len(accounts):
-        cookie_list = cookie_list[:len(accounts)]
-    while len(cookie_list) < len(accounts):
+    if len(accounts) == 0 and len(cookie_list) > 0:
+        for i in range(len(cookie_list)):
+            accounts.append({"user": "", "password": ""})
+    
+    max_count = max(len(accounts), len(cookie_list))
+    
+    while len(accounts) < max_count:
+        accounts.append({"user": "", "password": ""})
+    
+    while len(cookie_list) < max_count:
         cookie_list.append("")
     
     cookies_updated = False
     
-    for i, account in enumerate(accounts):
+    for i in range(max_count):
         account_index = i + 1
+        account = accounts[i]
         user = account["user"]
         password = account["password"]
         cookie = cookie_list[i] if i < len(cookie_list) else ""
@@ -299,49 +409,66 @@ if __name__ == "__main__":
         if result in ["success", "already"]:
             print(f"账号 {display_user} 签到成功: {msg}")
             
+            print("正在查询签到收益统计...")
+            stats, stats_msg = get_signin_stats(cookie, 30)
+            if stats:
+                print_signin_stats(stats, display_user)
+            else:
+                print(f"统计查询失败: {stats_msg}")
+            
             if hadsend:
                 try:
-                    send("NodeSeek 签到", f"账号 {display_user} 签到成功：{msg}")
+                    notification_msg = f"账号 {display_user} 签到成功：{msg}"
+                    if stats:
+                        notification_msg += f"\n最近30天已签到{stats['days_count']}天，共获得{stats['total_amount']}个鸡腿，平均{stats['average']}个/天"
+                    send("NodeSeek 签到", notification_msg)
                 except Exception as e:
                     print(f"发送通知失败: {e}")
         else:
-            print(f"签到失败或无效: {msg}")
-            print("尝试重新登录...")
-            if not user or not password:
-                print(f"账号 {display_user} 无法登录: 缺少用户名或密码")
-                continue
-                
-            new_cookie = session_login(user, password, solver_type, api_base_url, client_key)
-            if new_cookie:
-                print("登录成功，重新签到...")
-                result, msg = sign(new_cookie, ns_random)
-                if result in ["success", "already"]:
-                    print(f"账号 {display_user} 签到成功: {msg}")
-                    cookies_updated = True
-                    
-                    if i < len(cookie_list):
+            print(f"签到失败或Cookie无效: {msg}")
+            
+            if user and password:
+                print("尝试重新登录获取新Cookie...")
+                new_cookie = session_login(user, password, solver_type, api_base_url, client_key)
+                if new_cookie:
+                    print("登录成功，使用新Cookie重新签到...")
+                    result, msg = sign(new_cookie, ns_random)
+                    if result in ["success", "already"]:
+                        print(f"账号 {display_user} 签到成功: {msg}")
+                        cookies_updated = True
+                        
+                        print("正在查询签到收益统计...")
+                        stats, stats_msg = get_signin_stats(new_cookie, 30)
+                        if stats:
+                            print_signin_stats(stats, display_user)
+                        else:
+                            print(f"统计查询失败: {stats_msg}")
+                        
                         cookie_list[i] = new_cookie
+                        
+                        if hadsend:
+                            try:
+                                notification_msg = f"账号 {display_user} 签到成功：{msg}"
+                                if stats:
+                                    notification_msg += f"\n最近30天已签到{stats['days_count']}天，共获得{stats['total_amount']}个鸡腿，平均{stats['average']}个/天"
+                                send("NodeSeek 签到", notification_msg)
+                            except Exception as e:
+                                print(f"发送通知失败: {e}")
                     else:
-                        cookie_list.append(new_cookie)
-                    
+                        print(f"账号 {display_user} 重新签到仍然失败: {msg}")
+                else:
+                    print(f"账号 {display_user} 登录失败，无法获取新Cookie")
                     if hadsend:
                         try:
-                            send("NodeSeek 签到", f"账号 {display_user} 签到成功：{msg}")
+                            send("NodeSeek 登录失败", f"账号 {display_user} 登录失败")
                         except Exception as e:
                             print(f"发送通知失败: {e}")
-                else:
-                    print(f"账号 {display_user} 签到失败: {msg}")
             else:
-                print(f"账号 {display_user} 登录失败")
-                if hadsend:
-                    try:
-                        send("NodeSeek 登录失败", f"账号 {display_user} 登录失败")
-                    except Exception as e:
-                        print(f"发送通知失败: {e}")
+                print(f"账号 {display_user} 无法重新登录: 未配置用户名或密码")
     
     if cookies_updated and cookie_list:
         print("\n==== 处理完毕，保存更新后的Cookie ====")
-        all_cookies_new = "&".join(cookie_list)
+        all_cookies_new = "&".join([c for c in cookie_list if c.strip()])
         try:
             save_cookie("NS_COOKIE", all_cookies_new)
             print("所有Cookie已成功保存")
