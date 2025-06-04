@@ -256,9 +256,11 @@ def get_signin_stats(ns_cookie, days=30):
     }
     
     try:
-        # 获取本月第一天
-        now = datetime.now()
-        current_month_start = datetime(now.year, now.month, 1)
+        # 使用UTC+8时区（上海时区）
+        utc_offset = timedelta(hours=8)
+        now_utc = datetime.utcnow()
+        now_shanghai = now_utc + utc_offset
+        current_month_start = datetime(now_shanghai.year, now_shanghai.month, 1)
         
         # 获取多页数据以确保覆盖本月所有数据
         all_records = []
@@ -278,11 +280,13 @@ def get_signin_stats(ns_cookie, days=30):
                 
             # 检查最后一条记录的时间，如果超出本月范围就停止
             last_record_time = datetime.fromisoformat(records[-1][3].replace('Z', '+00:00'))
-            if last_record_time.replace(tzinfo=None) < current_month_start:
+            last_record_time_shanghai = last_record_time.replace(tzinfo=None) + utc_offset
+            if last_record_time_shanghai < current_month_start:
                 # 只添加在本月范围内的记录
                 for record in records:
                     record_time = datetime.fromisoformat(record[3].replace('Z', '+00:00'))
-                    if record_time.replace(tzinfo=None) >= current_month_start:
+                    record_time_shanghai = record_time.replace(tzinfo=None) + utc_offset
+                    if record_time_shanghai >= current_month_start:
                         all_records.append(record)
                 break
             else:
@@ -296,13 +300,14 @@ def get_signin_stats(ns_cookie, days=30):
         for record in all_records:
             amount, balance, description, timestamp = record
             record_time = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+            record_time_shanghai = record_time.replace(tzinfo=None) + utc_offset
             
             # 只统计本月的签到收益
-            if (record_time.replace(tzinfo=None) >= current_month_start and 
+            if (record_time_shanghai >= current_month_start and 
                 "签到收益" in description and "鸡腿" in description):
                 signin_records.append({
                     'amount': amount,
-                    'date': record_time.strftime('%Y-%m-%d'),
+                    'date': record_time_shanghai.strftime('%Y-%m-%d'),
                     'description': description
                 })
         
@@ -312,7 +317,7 @@ def get_signin_stats(ns_cookie, days=30):
                 'average': 0,
                 'days_count': 0,
                 'records': [],
-                'period': f"{now.strftime('%Y年%m月')}"
+                'period': f"{now_shanghai.strftime('%Y年%m月')}"
             }, "查询成功，但没有找到本月签到记录"
         
         # 统计数据
@@ -325,7 +330,7 @@ def get_signin_stats(ns_cookie, days=30):
             'average': average,
             'days_count': days_count,
             'records': signin_records,
-            'period': f"{now.strftime('%Y年%m月')}"
+            'period': f"{now_shanghai.strftime('%Y年%m月')}"
         }
         
         return stats, "查询成功"
