@@ -225,6 +225,7 @@ def sign(ns_cookie, ns_random):
         'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
         'origin': "https://www.nodeseek.com",
         'referer': "https://www.nodeseek.com/board",
+        'Content-Type': 'application/json',
         'Cookie': ns_cookie
     }
     try:
