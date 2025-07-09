@@ -4,6 +4,7 @@ import os
 import time
 import json
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from curl_cffi import requests
 from yescaptcha import YesCaptchaSolver, YesCaptchaSolverError
 from turnstile_solver import TurnstileSolver, TurnstileSolverError
@@ -258,9 +259,8 @@ def get_signin_stats(ns_cookie, days=30):
     
     try:
         # 使用UTC+8时区（上海时区）
-        utc_offset = timedelta(hours=8)
-        now_utc = datetime.utcnow()
-        now_shanghai = now_utc + utc_offset
+        shanghai_tz = ZoneInfo("Asia/Shanghai")
+        now_shanghai = datetime.now(shanghai_tz)
         
         # 计算查询开始时间：当前时间减去指定天数
         query_start_time = now_shanghai - timedelta(days=days)
@@ -284,15 +284,13 @@ def get_signin_stats(ns_cookie, days=30):
             # 检查最后一条记录的时间，如果超出查询范围就停止
             last_record_time = datetime.fromisoformat(
                 records[-1][3].replace('Z', '+00:00'))
-            last_record_time_shanghai = (last_record_time.replace(tzinfo=None)
-                                       + utc_offset)
+            last_record_time_shanghai = last_record_time.astimezone(shanghai_tz)
             if last_record_time_shanghai < query_start_time:
                 # 只添加在查询范围内的记录
                 for record in records:
                     record_time = datetime.fromisoformat(
                         record[3].replace('Z', '+00:00'))
-                    record_time_shanghai = (record_time.replace(tzinfo=None)
-                                          + utc_offset)
+                    record_time_shanghai = record_time.astimezone(shanghai_tz)
                     if record_time_shanghai >= query_start_time:
                         all_records.append(record)
                 break
@@ -308,8 +306,7 @@ def get_signin_stats(ns_cookie, days=30):
             amount, balance, description, timestamp = record
             record_time = datetime.fromisoformat(
                 timestamp.replace('Z', '+00:00'))
-            record_time_shanghai = (record_time.replace(tzinfo=None)
-                                   + utc_offset)
+            record_time_shanghai = record_time.astimezone(shanghai_tz)
             
             # 只统计指定天数内的签到收益
             if (record_time_shanghai >= query_start_time and
