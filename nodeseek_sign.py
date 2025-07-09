@@ -4,6 +4,7 @@ import os
 import time
 import json
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from curl_cffi import requests
 from yescaptcha import YesCaptchaSolver, YesCaptchaSolverError
 from turnstile_solver import TurnstileSolver, TurnstileSolverError
@@ -245,10 +246,13 @@ def sign(ns_cookie, ns_random):
 
 # ---------------- 查询签到收益统计函数 ----------------
 def get_signin_stats(ns_cookie, days=30):
-    """查询本月的签到收益统计"""
+    """查询前days天内的签到收益统计"""
     if not ns_cookie:
         return None, "无有效Cookie"
-        
+    
+    if days <= 0:
+        days = 1
+    
     headers = {
         'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
         'origin': "https://www.nodeseek.com",
@@ -258,16 +262,17 @@ def get_signin_stats(ns_cookie, days=30):
     
     try:
         # 使用UTC+8时区（上海时区）
-        utc_offset = timedelta(hours=8)
-        now_utc = datetime.utcnow()
-        now_shanghai = now_utc + utc_offset
-        current_month_start = datetime(now_shanghai.year, now_shanghai.month, 1)
+        shanghai_tz = ZoneInfo("Asia/Shanghai")
+        now_shanghai = datetime.now(shanghai_tz)
         
-        # 获取多页数据以确保覆盖本月所有数据
+        # 计算查询开始时间：当前时间减去指定天数
+        query_start_time = now_shanghai - timedelta(days=days)
+        
+        # 获取多页数据以确保覆盖指定天数内的所有数据
         all_records = []
         page = 1
         
-        while page <= 10:  # 最多查询10页，防止无限循环
+        while page <= 20:  # 最多查询20页，防止无限循环
             url = f"https://www.nodeseek.com/api/account/credit/page-{page}"
             response = requests.get(url, headers=headers, impersonate="chrome110")
             data = response.json()
@@ -279,15 +284,17 @@ def get_signin_stats(ns_cookie, days=30):
             if not records:
                 break
                 
-            # 检查最后一条记录的时间，如果超出本月范围就停止
-            last_record_time = datetime.fromisoformat(records[-1][3].replace('Z', '+00:00'))
-            last_record_time_shanghai = last_record_time.replace(tzinfo=None) + utc_offset
-            if last_record_time_shanghai < current_month_start:
-                # 只添加在本月范围内的记录
+            # 检查最后一条记录的时间，如果超出查询范围就停止
+            last_record_time = datetime.fromisoformat(
+                records[-1][3].replace('Z', '+00:00'))
+            last_record_time_shanghai = last_record_time.astimezone(shanghai_tz)
+            if last_record_time_shanghai < query_start_time:
+                # 只添加在查询范围内的记录
                 for record in records:
-                    record_time = datetime.fromisoformat(record[3].replace('Z', '+00:00'))
-                    record_time_shanghai = record_time.replace(tzinfo=None) + utc_offset
-                    if record_time_shanghai >= current_month_start:
+                    record_time = datetime.fromisoformat(
+                        record[3].replace('Z', '+00:00'))
+                    record_time_shanghai = record_time.astimezone(shanghai_tz)
+                    if record_time_shanghai >= query_start_time:
                         all_records.append(record)
                 break
             else:
@@ -296,21 +303,27 @@ def get_signin_stats(ns_cookie, days=30):
             page += 1
             time.sleep(0.5)
         
-        # 筛选本月签到收益记录
+        # 筛选指定天数内的签到收益记录
         signin_records = []
         for record in all_records:
             amount, balance, description, timestamp = record
-            record_time = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
-            record_time_shanghai = record_time.replace(tzinfo=None) + utc_offset
+            record_time = datetime.fromisoformat(
+                timestamp.replace('Z', '+00:00'))
+            record_time_shanghai = record_time.astimezone(shanghai_tz)
             
-            # 只统计本月的签到收益
-            if (record_time_shanghai >= current_month_start and 
-                "签到收益" in description and "鸡腿" in description):
+            # 只统计指定天数内的签到收益
+            if (record_time_shanghai >= query_start_time and
+                    "签到收益" in description and "鸡腿" in description):
                 signin_records.append({
                     'amount': amount,
                     'date': record_time_shanghai.strftime('%Y-%m-%d'),
                     'description': description
                 })
+        
+        # 生成时间范围描述
+        period_desc = f"近{days}天"
+        if days == 1:
+            period_desc = "今天"
         
         if not signin_records:
             return {
@@ -318,8 +331,8 @@ def get_signin_stats(ns_cookie, days=30):
                 'average': 0,
                 'days_count': 0,
                 'records': [],
-                'period': f"{now_shanghai.strftime('%Y年%m月')}"
-            }, "查询成功，但没有找到本月签到记录"
+                'period': period_desc,
+            }, f"查询成功，但没有找到{period_desc}的签到记录"
         
         # 统计数据
         total_amount = sum(record['amount'] for record in signin_records)
@@ -331,7 +344,7 @@ def get_signin_stats(ns_cookie, days=30):
             'average': average,
             'days_count': days_count,
             'records': signin_records,
-            'period': f"{now_shanghai.strftime('%Y年%m月')}"
+            'period': period_desc
         }
         
         return stats, "查询成功"
