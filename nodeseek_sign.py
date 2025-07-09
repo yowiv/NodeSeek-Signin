@@ -249,7 +249,10 @@ def get_signin_stats(ns_cookie, days=30):
     """查询前days天内的签到收益统计"""
     if not ns_cookie:
         return None, "无有效Cookie"
-        
+    
+    if days <= 0:
+        days = 1
+    
     headers = {
         'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
         'origin': "https://www.nodeseek.com",
