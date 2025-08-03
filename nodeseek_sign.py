@@ -2,7 +2,6 @@
 
 import os
 import time
-import json
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from curl_cffi import requests
@@ -20,6 +19,10 @@ except ImportError:
 # ---------------- 环境检测函数 ----------------
 def detect_environment():
     """检测当前运行环境"""
+    # 优先检测是否在 Docker 环境中
+    if os.environ.get("IN_DOCKER") == "true":
+        return "docker"
+        
     # 检测是否在青龙环境中
     ql_path_markers = ['/ql/data/', '/ql/config/', '/ql/', '/.ql/']
     in_ql_env = False
@@ -138,12 +141,31 @@ def save_cookie_to_ql(var_name: str, cookie: str):
         print(f"青龙面板环境变量操作异常: {str(e)}")
         return False
 
+# ---------------- Docker Cookie 文件保存 ----------------
+COOKIE_FILE_PATH = "./cookie/NS_COOKIE.txt"
+
+def save_cookie_to_file(cookie_str: str):
+    """将Cookie保存到文件"""
+    try:
+        # 确保目录存在
+        os.makedirs(os.path.dirname(COOKIE_FILE_PATH), exist_ok=True)
+        with open(COOKIE_FILE_PATH, "w") as f:
+            f.write(cookie_str)
+        print(f"Cookie 已成功保存到文件: {COOKIE_FILE_PATH}")
+        return True
+    except Exception as e:
+        print(f"保存Cookie到文件失败: {e}")
+        return False
+
 # ---------------- 统一变量保存函数 ----------------
 def save_cookie(var_name: str, cookie: str):
     """根据当前环境保存Cookie到相应位置"""
     env_type = detect_environment()
     
-    if env_type == "qinglong":
+    if env_type == "docker":
+        print("检测到Docker环境，保存Cookie到文件...")
+        return save_cookie_to_file(cookie)
+    elif env_type == "qinglong":
         print("检测到青龙环境，保存变量到青龙面板...")
         return save_cookie_to_ql(var_name, cookie)
     elif env_type == "github":
@@ -393,7 +415,21 @@ if __name__ == "__main__":
             break
     
     # 读取现有Cookie
-    all_cookies = os.getenv("NS_COOKIE", "")
+    all_cookies = ""
+    if detect_environment() == "docker":
+        print(f"Docker环境，尝试从 {COOKIE_FILE_PATH} 读取Cookie...")
+        if os.path.exists(COOKIE_FILE_PATH):
+            try:
+                with open(COOKIE_FILE_PATH, "r") as f:
+                    all_cookies = f.read().strip()
+                print("成功从文件加载Cookie。")
+            except Exception as e:
+                print(f"从文件读取Cookie失败: {e}")
+        else:
+            print("Cookie文件不存在，将使用空Cookie。")
+    else:
+        all_cookies = os.getenv("NS_COOKIE", "")
+        
     cookie_list = all_cookies.split("&")
     cookie_list = [c.strip() for c in cookie_list if c.strip()]
     

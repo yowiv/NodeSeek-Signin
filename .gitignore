@@ -1,0 +1,21 @@
+# Python virtual environment
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Sensitive configuration
+.env
+
+# Cookie data files
+cookie/*
+!cookie/.gitkeep
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE/Editor configuration
+.vscode/
+.idea/
