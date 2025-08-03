@@ -11,13 +11,14 @@
 
 ## 📝 项目介绍
 
-这是一个用于 NodeSeek 论坛自动签到的工具，支持通过 GitHub Actions 或青龙面板进行定时自动签到操作。签到模式默认为随机签到，帮助用户轻松获取论坛每日"鸡腿"奖励。
+这是一个用于 NodeSeek 论坛自动签到的工具，支持通过 GitHub Actions、青龙面板或 Docker Compose 进行定时自动签到操作。签到模式默认为随机签到，帮助用户轻松获取论坛每日"鸡腿"奖励。
 
 
 ## ✨ 功能特点
 
 - 📅 支持 GitHub Actions 自动运行
 - 🦉 支持青龙面板定时任务
+- 🐳 支持 Docker Compose 一键部署
 - 🍪 支持 Cookie 或账号密码登录方式
 - 👥 支持多账号批量签到
 - 🔐 支持多种验证码解决方案
@@ -55,7 +56,60 @@ ql repo https://github.com/yowiv/NodeSeek-Signin.git
 
 然后在环境变量中添加所需配置。
 
-### 方式三：账号密码登录（自动获取新Cookie）
+### 方式三：Docker Compose
+
+这种部署方式可以实现本地自动化定时签到，并支持自动处理验证码。
+
+**第一步：克隆项目**
+
+首先，将整个项目克隆到你的服务器上：
+
+```bash
+git clone https://github.com/yowiv/NodeSeek-Signin.git
+cd NodeSeek-Signin
+```
+
+**第二步：配置环境变量**
+
+将 `.env.example` 文件复制或重命名为 `.env`，然后编辑 `.env` 文件，填入你的配置信息。
+
+```bash
+cp .env.example .env
+```
+
+你需要根据注释提示，填写以下关键信息：
+- **账户信息**: `USER1`, `PASS1`, `USER2`, `PASS2` 等。
+- **验证码服务**: 如果使用账号密码登录，必须配置验证码服务。推荐使用 `yescaptcha`，并填入 `CLIENTT_KEY`。
+- **定时任务**: `RUN_AT` 变量用于设置签到任务的执行时间。
+    - **固定时间**: 如 `10:30`，表示每天上午10点30分执行。
+    - **时间范围**: 如 `10:00-18:00`，表示在每天上午10点到下午6点之间随机选择一个时间点执行。
+    - **默认值**: 如果不设置，默认为 `09:00-21:00`。
+
+**第三步：启动服务**
+
+在存放 `docker-compose.yml` 和 `.env` 文件的目录下，执行以下命令在后台构建并启动服务：
+
+```bash
+docker-compose up -d
+```
+
+**第四步：查看日志**
+
+你可以使用以下命令实时查看容器的日志，以确认服务是否正常运行和签到是否成功：
+
+```bash
+docker-compose logs -f
+```
+
+**第五步：停止服务**
+
+如果需要停止并移除服务容器，可以执行以下命令：
+
+```bash
+docker-compose down
+```
+
+### 方式四：账号密码登录（自动获取新Cookie）
 
 当 Cookie 失效时，系统会尝试使用账号密码方式登录并获取新的 Cookie。登录需要通过验证码验证，支持以下两种验证码解决方案：
 
@@ -171,6 +225,7 @@ PASS3=密码3
 | `USER1`、`USER2`... | 可选 | - | NodeSeek 论坛用户名，当 Cookie 失效时使用 |
 | `PASS1`、`PASS2`... | 可选 | - | NodeSeek 论坛密码 |
 | `NS_RANDOM` | 可选 | true | 是否随机签到（true/false） |
+| `RUN_AT` | 可选 | `09:00-21:00` | **仅Docker Compose可用**。设置定时任务执行时间，支持固定时间 `10:30` 或时间范围 `10:00-18:00` |
 | `SOLVER_TYPE` | 可选 | turnstile | 验证码解决方案（turnstile/yescaptcha） |
 | `API_BASE_URL` | 条件必需 | - | CloudFreed 服务地址，当 SOLVER_TYPE=turnstile 时必填 |
 | `CLIENTT_KEY` | 必需 | - | 验证码服务客户端密钥 |
@@ -187,3 +242,45 @@ PASS3=密码3
 ## ⚠️ 免责声明
 
 本项目仅供学习交流使用，请遵守 NodeSeek 论坛的相关规定和条款。
+
+## 👨‍💻 本地开发与测试
+
+为了方便在本地进行开发和调试，项目提供了一套零侵入的测试方案。你可以按照以下步骤在本地环境中运行签到脚本。
+
+### 第一步：创建虚拟环境
+
+首先，建议创建一个独立的 Python 虚拟环境，以避免依赖冲突。
+
+```bash
+python -m venv .venv
+# Windows
+.venv\Scripts\activate
+# macOS / Linux
+source .venv/bin/activate
+```
+
+### 第二步：安装依赖
+
+项目包含两份依赖文件：`requirements.txt` 用于生产环境，`requirements-dev.txt` 包含本地测试所需的额外库。
+
+```bash
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
+```
+
+### 第三步：配置环境变量
+
+将环境变量示例文件 `.env.example` 复制一份并重命名为 `.env`，然后根据你的需求填入测试配置，例如账号密码和验证码服务密钥。
+
+```bash
+cp .env.example .env```
+
+### 第四步：运行测试
+
+配置完成后，执行以下命令即可运行一次性的签到测试。
+
+```bash
+python test_run.py
+```
+
+该脚本会自动加载 `.env` 文件中的环境变量，并执行主签到程序，让你可以在本地快速验证签到逻辑是否正常工作。
