@@ -9,6 +9,9 @@
 
 </div>
 
+[Deepflood论坛签到](https://github.com/yowiv/deepflood-Signin)
+
+
 ## 📝 项目介绍
 
 这是一个用于 NodeSeek 论坛自动签到的工具，支持通过 GitHub Actions、青龙面板或 Docker Compose 进行定时自动签到操作。签到模式默认为随机签到，帮助用户轻松获取论坛每日"鸡腿"奖励。
