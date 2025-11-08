@@ -58,7 +58,9 @@ jobs:
           # GitHub API配置
           GH_PAT: ${{ secrets.GH_PAT }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          
+
+          NS_RANDOM : ${{ secrets.NS_RANDOM }}
+
           # 通知推送配置
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_USER_ID: ${{ secrets.TG_USER_ID }}
