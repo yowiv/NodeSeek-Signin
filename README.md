@@ -33,7 +33,7 @@
 
 1. **获取代码**：Fork/Clone 本仓库，或在青龙面板/Cloudflare Worker 等环境中拉取脚本。
 2. **选择部署方式**：根据自己的运行环境（GitHub Actions、Docker、青龙、Cloudflare Worker）跳转到对应文档完成部署。
-3. **配置变量**：按照 [`docs/configuration/environment-variables.md`](docs/configuration/environment-variables.md) 填写 `NS_COOKIE`、`USERn/PASSn`、验证码与通知变量；验证码方案差异见 [`docs/configuration/solutions.md`](docs/configuration/solutions.md)。
+3. **配置变量**：按照 [`docs/configuration/config.md`](docs/configuration/config.md) 填写 `NS_COOKIE`、`USERn/PASSn`、验证码与通知变量；验证码方案差异见 [`docs/configuration/solutions.md`](docs/configuration/solutions.md)。
 4. **验证运行**：在目标环境触发一次任务（或运行 `python test_run.py`）确认签到与通知均正常。
 
 ## 🧱 部署方式一览
@@ -49,7 +49,7 @@
 
 ##  配置小抄
 
-- **账户与 Cookie**：全量变量说明见 [`environment-variables.md`](docs/configuration/environment-variables.md)。支持 `NS_COOKIE` 多账号或 `USERn/PASSn` 自动登录，两者可共存。
+- **账户与 Cookie**：全量变量说明见 [`config.md`](docs/configuration/config.md)。支持 `NS_COOKIE` 多账号或 `USERn/PASSn` 自动登录，两者可共存。
 - **验证码方案**：[`solutions.md`](docs/configuration/solutions.md) 对比 CloudFreed、自建接口与 YesCaptcha，并列出必填变量。
 - **通知渠道**：`notify.py` 中的 `push_config` 覆盖 Telegram、Bark、PushPlus、企业微信、邮件等渠道，对应变量也收录在环境变量手册。
 - **GitHub PAT & 自动回写**：如需在 Actions 中自动更新仓库变量 `NS_COOKIE`，请在设置中添加 `GH_PAT`，具体操作步骤详见 GitHub Actions 文档。
