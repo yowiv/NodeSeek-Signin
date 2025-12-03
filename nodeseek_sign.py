@@ -203,7 +203,7 @@ def session_login(user, password, solver_type, api_base_url, client_key):
         print(f"验证码错误: {e}")
         return None
 
-    session = requests.Session(impersonate="chrome110")
+    session = requests.Session(impersonate="chrome120")
     session.get("https://www.nodeseek.com/signIn.html")
 
     data = {
@@ -253,7 +253,7 @@ def sign(ns_cookie, ns_random):
     }
     try:
         url = f"https://www.nodeseek.com/api/attendance?random={ns_random}"
-        response = requests.post(url, headers=headers, impersonate="chrome110")
+        response = requests.post(url, headers=headers, impersonate="chrome120")
         data = response.json()
         msg = data.get("message", "")
         if "鸡腿" in msg or data.get("success"):
@@ -296,7 +296,7 @@ def get_signin_stats(ns_cookie, days=30):
         
         while page <= 20:  # 最多查询20页，防止无限循环
             url = f"https://www.nodeseek.com/api/account/credit/page-{page}"
-            response = requests.get(url, headers=headers, impersonate="chrome110")
+            response = requests.get(url, headers=headers, impersonate="chrome120")
             data = response.json()
             
             if not data.get("success") or not data.get("data"):
@@ -533,3 +533,4 @@ if __name__ == "__main__":
             print("所有Cookie已成功保存")
         except Exception as e:
             print(f"保存Cookie变量异常: {e}")
+
