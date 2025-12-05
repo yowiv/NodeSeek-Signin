@@ -213,8 +213,8 @@ def session_login(user, password, solver_type, api_base_url, client_key):
         "source": "turnstile"
     }
     headers = {
-        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
-        'sec-ch-ua': "\"Not A(Brand\";v=\"99\", \"Microsoft Edge\";v=\"142\", \"Chromium\";v=\"142\"",
+        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0. 0 Safari/537.36",
+        'sec-ch-ua': "\"Not A(Brand\";v=\"99\", \"Microsoft Edge\";v=\"133\", \"Chromium\";v=\"133\"",
         'sec-ch-ua-mobile': "?0",
         'sec-ch-ua-platform': "\"Windows\"",
         'origin': "https://www.nodeseek.com",
@@ -245,7 +245,7 @@ def sign(ns_cookie, ns_random):
         return "invalid", "无有效Cookie"
         
     headers = {
-        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0. 0 Safari/537.36",
         'origin': "https://www.nodeseek.com",
         'referer': "https://www.nodeseek.com/board",
         'Content-Type': 'application/json',
@@ -276,7 +276,7 @@ def get_signin_stats(ns_cookie, days=30):
         days = 1
     
     headers = {
-        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
         'origin': "https://www.nodeseek.com",
         'referer': "https://www.nodeseek.com/board",
         'Cookie': ns_cookie
