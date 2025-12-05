@@ -253,7 +253,7 @@ def sign(ns_cookie, ns_random):
     }
     try:
         url = f"https://www.nodeseek.com/api/attendance?random={ns_random}"
-        response = requests.post(url, headers=headers, impersonate="chrome120")
+        response = requests.post(url, headers=headers, impersonate="chrome124")
         data = response.json()
         msg = data.get("message", "")
         if "鸡腿" in msg or data.get("success"):
@@ -533,4 +533,5 @@ if __name__ == "__main__":
             print("所有Cookie已成功保存")
         except Exception as e:
             print(f"保存Cookie变量异常: {e}")
+
 
