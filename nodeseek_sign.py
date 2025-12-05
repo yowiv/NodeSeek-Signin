@@ -7,6 +7,9 @@ from zoneinfo import ZoneInfo
 from curl_cffi import requests
 from yescaptcha import YesCaptchaSolver, YesCaptchaSolverError
 from turnstile_solver import TurnstileSolver, TurnstileSolverError
+
+# 统一 impersonate 版本，可通过环境变量 NS_IMPERSONATE 覆盖
+IMPERSONATE_VERSION = os.getenv("NS_IMPERSONATE", "chrome136")
 # ---------------- 通知模块动态加载 ----------------
 hadsend = False
 send = None
@@ -203,7 +206,7 @@ def session_login(user, password, solver_type, api_base_url, client_key):
         print(f"验证码错误: {e}")
         return None
 
-    session = requests.Session(impersonate="chrome142")
+    session = requests.Session(impersonate=IMPERSONATE_VERSION)
     session.get("https://www.nodeseek.com/signIn.html")
 
     data = {
@@ -213,8 +216,8 @@ def session_login(user, password, solver_type, api_base_url, client_key):
         "source": "turnstile"
     }
     headers = {
-        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0. 0 Safari/537.36",
-        'sec-ch-ua': "\"Not A(Brand\";v=\"99\", \"Microsoft Edge\";v=\"133\", \"Chromium\";v=\"133\"",
+        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
+        'sec-ch-ua': "\"Not A(Brand\";v=\"99\", \"Microsoft Edge\";v=\"121\", \"Chromium\";v=\"121\"",
         'sec-ch-ua-mobile': "?0",
         'sec-ch-ua-platform': "\"Windows\"",
         'origin': "https://www.nodeseek.com",
@@ -245,7 +248,7 @@ def sign(ns_cookie, ns_random):
         return "invalid", "无有效Cookie"
         
     headers = {
-        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0. 0 Safari/537.36",
+        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
         'origin': "https://www.nodeseek.com",
         'referer': "https://www.nodeseek.com/board",
         'Content-Type': 'application/json',
@@ -253,7 +256,11 @@ def sign(ns_cookie, ns_random):
     }
     try:
         url = f"https://www.nodeseek.com/api/attendance?random={ns_random}"
-        response = requests.post(url, headers=headers, impersonate="chrome142")
+        response = requests.post(url, headers=headers, impersonate=IMPERSONATE_VERSION)
+        if response.status_code == 403:
+            print("[ERROR] 403 Forbidden - 仍被 Cloudflare 阻拦")
+            print(f"[DEBUG] 响应内容: {response.text[:300]}")
+            return None
         data = response.json()
         msg = data.get("message", "")
         if "鸡腿" in msg or data.get("success"):
@@ -276,7 +283,7 @@ def get_signin_stats(ns_cookie, days=30):
         days = 1
     
     headers = {
-        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
         'origin': "https://www.nodeseek.com",
         'referer': "https://www.nodeseek.com/board",
         'Cookie': ns_cookie
@@ -296,7 +303,7 @@ def get_signin_stats(ns_cookie, days=30):
         
         while page <= 20:  # 最多查询20页，防止无限循环
             url = f"https://www.nodeseek.com/api/account/credit/page-{page}"
-            response = requests.get(url, headers=headers, impersonate="chrome142")
+            response = requests.get(url, headers=headers, impersonate=IMPERSONATE_VERSION)
             data = response.json()
             
             if not data.get("success") or not data.get("data"):
