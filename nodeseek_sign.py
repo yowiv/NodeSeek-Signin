@@ -203,7 +203,7 @@ def session_login(user, password, solver_type, api_base_url, client_key):
         print(f"验证码错误: {e}")
         return None
 
-    session = requests.Session(impersonate="chrome120")
+    session = requests.Session(impersonate="chrome142")
     session.get("https://www.nodeseek.com/signIn.html")
 
     data = {
@@ -213,8 +213,8 @@ def session_login(user, password, solver_type, api_base_url, client_key):
         "source": "turnstile"
     }
     headers = {
-        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
-        'sec-ch-ua': "\"Not A(Brand\";v=\"99\", \"Microsoft Edge\";v=\"121\", \"Chromium\";v=\"121\"",
+        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+        'sec-ch-ua': "\"Not A(Brand\";v=\"99\", \"Microsoft Edge\";v=\"142\", \"Chromium\";v=\"142\"",
         'sec-ch-ua-mobile': "?0",
         'sec-ch-ua-platform': "\"Windows\"",
         'origin': "https://www.nodeseek.com",
@@ -245,7 +245,7 @@ def sign(ns_cookie, ns_random):
         return "invalid", "无有效Cookie"
         
     headers = {
-        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
+        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
         'origin': "https://www.nodeseek.com",
         'referer': "https://www.nodeseek.com/board",
         'Content-Type': 'application/json',
@@ -253,7 +253,7 @@ def sign(ns_cookie, ns_random):
     }
     try:
         url = f"https://www.nodeseek.com/api/attendance?random={ns_random}"
-        response = requests.post(url, headers=headers, impersonate="chrome120")
+        response = requests.post(url, headers=headers, impersonate="chrome142")
         data = response.json()
         msg = data.get("message", "")
         if "鸡腿" in msg or data.get("success"):
@@ -276,7 +276,7 @@ def get_signin_stats(ns_cookie, days=30):
         days = 1
     
     headers = {
-        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
+        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
         'origin': "https://www.nodeseek.com",
         'referer': "https://www.nodeseek.com/board",
         'Cookie': ns_cookie
@@ -296,7 +296,7 @@ def get_signin_stats(ns_cookie, days=30):
         
         while page <= 20:  # 最多查询20页，防止无限循环
             url = f"https://www.nodeseek.com/api/account/credit/page-{page}"
-            response = requests.get(url, headers=headers, impersonate="chrome120")
+            response = requests.get(url, headers=headers, impersonate="chrome142")
             data = response.json()
             
             if not data.get("success") or not data.get("data"):
