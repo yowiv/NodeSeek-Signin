@@ -227,16 +227,7 @@ def session_login(user, password, solver_type, api_base_url, client_key):
     }
     try:
         response = session.post("https://www.nodeseek.com/api/account/signIn", json=data, headers=headers)
-        try:
-            resp_json = response.json()
-        except Exception:
-            print(
-                "登录返回非JSON:",
-                f"status={response.status_code}",
-                f"content-type={response.headers.get('Content-Type')}",
-                f"text={response.text[:300]}"
-            )
-            return None
+        resp_json = response.json()
         if resp_json.get("success"):
             cookies = session.cookies.get_dict()
             cookie_string = '; '.join([f"{k}={v}" for k, v in cookies.items()])
@@ -252,37 +243,18 @@ def session_login(user, password, solver_type, api_base_url, client_key):
 def sign(ns_cookie, ns_random):
     if not ns_cookie:
         return "invalid", "无有效Cookie"
-    session = requests.Session(impersonate="chrome120")
-    for kv in ns_cookie.split(";"):
-        kv = kv.strip()
-        if not kv or "=" not in kv:
-            continue
-        k, v = kv.split("=", 1)
-        session.cookies.set(k.strip(), v.strip(), domain="www.nodeseek.com")
-
+        
     headers = {
         'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
         'origin': "https://www.nodeseek.com",
         'referer': "https://www.nodeseek.com/board",
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Cookie': ns_cookie
     }
     try:
-        warmup = session.get("https://www.nodeseek.com/board", headers=headers)
-        if warmup.status_code == 403:
-            return (
-                "error",
-                f"签到预热 403: content-type={warmup.headers.get('Content-Type')}, text={warmup.text[:200]}"
-            )
-
         url = f"https://www.nodeseek.com/api/attendance?random={ns_random}"
-        response = session.post(url, headers=headers)
-        try:
-            data = response.json()
-        except Exception:
-            return (
-                "error",
-                f"签到返回非JSON: status={response.status_code}, content-type={response.headers.get('Content-Type')}, text={response.text[:200]}"
-            )
+        response = requests.post(url, headers=headers, impersonate="chrome120")
+        data = response.json()
         msg = data.get("message", "")
         if "鸡腿" in msg or data.get("success"):
             return "success", msg
@@ -561,4 +533,3 @@ if __name__ == "__main__":
             print("所有Cookie已成功保存")
         except Exception as e:
             print(f"保存Cookie变量异常: {e}")
-
