@@ -252,17 +252,30 @@ def session_login(user, password, solver_type, api_base_url, client_key):
 def sign(ns_cookie, ns_random):
     if not ns_cookie:
         return "invalid", "无有效Cookie"
-        
+    session = requests.Session(impersonate="chrome120")
+    for kv in ns_cookie.split(";"):
+        kv = kv.strip()
+        if not kv or "=" not in kv:
+            continue
+        k, v = kv.split("=", 1)
+        session.cookies.set(k.strip(), v.strip(), domain="www.nodeseek.com")
+
     headers = {
         'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
         'origin': "https://www.nodeseek.com",
         'referer': "https://www.nodeseek.com/board",
-        'Content-Type': 'application/json',
-        'Cookie': ns_cookie
+        'Content-Type': 'application/json'
     }
     try:
+        warmup = session.get("https://www.nodeseek.com/board", headers=headers)
+        if warmup.status_code == 403:
+            return (
+                "error",
+                f"签到预热 403: content-type={warmup.headers.get('Content-Type')}, text={warmup.text[:200]}"
+            )
+
         url = f"https://www.nodeseek.com/api/attendance?random={ns_random}"
-        response = requests.post(url, headers=headers, impersonate="chrome124")
+        response = session.post(url, headers=headers)
         try:
             data = response.json()
         except Exception:
