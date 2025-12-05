@@ -227,7 +227,16 @@ def session_login(user, password, solver_type, api_base_url, client_key):
     }
     try:
         response = session.post("https://www.nodeseek.com/api/account/signIn", json=data, headers=headers)
-        resp_json = response.json()
+        try:
+            resp_json = response.json()
+        except Exception:
+            print(
+                "登录返回非JSON:",
+                f"status={response.status_code}",
+                f"content-type={response.headers.get('Content-Type')}",
+                f"text={response.text[:300]}"
+            )
+            return None
         if resp_json.get("success"):
             cookies = session.cookies.get_dict()
             cookie_string = '; '.join([f"{k}={v}" for k, v in cookies.items()])
@@ -254,7 +263,13 @@ def sign(ns_cookie, ns_random):
     try:
         url = f"https://www.nodeseek.com/api/attendance?random={ns_random}"
         response = requests.post(url, headers=headers, impersonate="chrome124")
-        data = response.json()
+        try:
+            data = response.json()
+        except Exception:
+            return (
+                "error",
+                f"签到返回非JSON: status={response.status_code}, content-type={response.headers.get('Content-Type')}, text={response.text[:200]}"
+            )
         msg = data.get("message", "")
         if "鸡腿" in msg or data.get("success"):
             return "success", msg
@@ -533,5 +548,4 @@ if __name__ == "__main__":
             print("所有Cookie已成功保存")
         except Exception as e:
             print(f"保存Cookie变量异常: {e}")
-
 
