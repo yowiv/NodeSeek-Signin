@@ -408,21 +408,22 @@ def get_signin_stats(ns_cookie, days=30):
         while page <= 20:  # 最多查询20页，防止无限循环
             url = f"https://www.nodeseek.com/api/account/credit/page-{page}"
             response, used_impersonate, req_err = _request_with_impersonate_fallback(
-            "GET", url, headers=headers, json_data=None, timeout=25
-        )
-        if req_err is not None:
-            return None, f"请求异常: {req_err}"
-        if response is None:
-            return None, "请求失败：无响应"
+                "GET", url, headers=headers, json_data=None, timeout=25
+            )
+            if req_err is not None:
+                return None, f"请求异常: {req_err}"
+            if response is None:
+                return None, "请求失败：无响应"
+
             data = response.json()
-            
+
             if not data.get("success") or not data.get("data"):
                 break
-                
+
             records = data.get("data", [])
             if not records:
                 break
-                
+
             # 检查最后一条记录的时间，如果超出查询范围就停止
             last_record_time = datetime.fromisoformat(
                 records[-1][3].replace('Z', '+00:00'))
@@ -438,7 +439,7 @@ def get_signin_stats(ns_cookie, days=30):
                 break
             else:
                 all_records.extend(records)
-                
+
             page += 1
             time.sleep(0.5)
         
