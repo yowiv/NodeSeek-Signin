@@ -61,7 +61,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           
           # 指纹配置
-          NS_IMPERSONATE: ${{ secrets.NS_IMPERSONATE }}
+          NS_IMPERSONATE: ${{ secrets.NS_IMPERSONATE || 'chrome110' }}
 
           # 通知推送配置
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
