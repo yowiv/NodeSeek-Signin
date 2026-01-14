@@ -8,8 +8,71 @@ from curl_cffi import requests
 from yescaptcha import YesCaptchaSolver, YesCaptchaSolverError
 from turnstile_solver import TurnstileSolver, TurnstileSolverError
 
-# 统一 impersonate 版本，可通过环境变量 NS_IMPERSONATE 覆盖
-IMPERSONATE_VERSION = os.getenv("NS_IMPERSONATE", "chrome136")
+def _get_env_str(name: str, default: str = "") -> str:
+    """读取环境变量并去掉空白；若为空字符串则回退 default。"""
+    v = os.getenv(name)
+    if v is None:
+        return default
+    v = str(v).strip()
+    return v if v else default
+
+
+def _get_impersonate_candidates() -> list[str]:
+    """生成 curl_cffi impersonate 版本候选列表。
+    """
+    primary = _get_env_str("NS_IMPERSONATE", "")
+    defaults = [
+    # Chrome (Desktop)
+    "chrome99",
+    "chrome100",
+    "chrome101",
+    "chrome104",
+    "chrome107",
+    "chrome110",
+    "chrome116",
+    "chrome119",
+    "chrome120",
+    "chrome123",
+    "chrome124",
+    "chrome131",
+    "chrome133a",
+    "chrome136",
+
+    # Chrome (Android)
+    "chrome99_android",
+    "chrome131_android",
+
+    # Edge
+    "edge99",
+    "edge101",
+
+    # Safari
+    "safari153",
+    "safari155",
+    "safari170",
+    "safari172_ios",
+    "safari180",
+    "safari180_ios",
+    "safari184",
+    "safari184_ios",
+    "safari260",
+    "safari260_ios",
+
+    # Firefox / Tor
+    "firefox133",
+    "tor145",
+    ]
+
+    candidates: list[str] = []
+    for v in ([primary] if primary else []) + defaults:
+        if v and v not in candidates:
+            candidates.append(v)
+    return candidates
+
+
+IMPERSONATE_VERSION = _get_env_str("NS_IMPERSONATE", "chrome110")
+IMPERSONATE_CANDIDATES = _get_impersonate_candidates()
+
 # ---------------- 通知模块动态加载 ----------------
 hadsend = False
 send = None
@@ -206,7 +269,10 @@ def session_login(user, password, solver_type, api_base_url, client_key):
         print(f"验证码错误: {e}")
         return None
 
-    session = requests.Session(impersonate=IMPERSONATE_VERSION)
+    # 优先使用环境变量指定的 IMPERSONATE_VERSION（若未设置则使用默认值），作为首次尝试的指纹
+    initial_impersonate = IMPERSONATE_VERSION
+    session = requests.Session(impersonate=initial_impersonate)
+    print(f"[INFO] 使用初始 impersonate: {initial_impersonate}")
     session.get("https://www.nodeseek.com/signIn.html")
 
     data = {
@@ -243,6 +309,37 @@ def session_login(user, password, solver_type, api_base_url, client_key):
         return None
 
 # ---------------- 签到逻辑 ----------------
+def _is_cloudflare_challenge(text: str) -> bool:
+    if not text:
+        return False
+    t = text.lower()
+    # 常见挑战页特征
+    return ("just a moment" in t) or ("cf-chl" in t) or ("challenge" in t and "cloudflare" in t)
+
+def _request_with_impersonate_fallback(method: str, url: str, *, headers: dict, json_data=None, timeout: int = 25):
+    last_resp = None
+    last_err = None
+    # 优先尝试 IMPERSONATE_VERSION，然后尝试 IMPERSONATE_CANDIDATES（去重）
+    ordered_candidates = [IMPERSONATE_VERSION] + [v for v in IMPERSONATE_CANDIDATES if v != IMPERSONATE_VERSION]
+    for ver in ordered_candidates:
+        try:
+            resp = requests.request(method, url, headers=headers, json=json_data, impersonate=ver, timeout=timeout)
+            last_resp = resp
+            if resp.status_code != 403:
+                return resp, ver, None
+            # 403：如果是 Cloudflare 挑战页特征，则尝试下一个指纹版本继续重试
+            if _is_cloudflare_challenge(resp.text):
+                print(f"[WARN] 403 Cloudflare challenge (impersonate={ver})，尝试切换指纹...")
+                continue
+            # 非挑战页 403，直接返回响应
+            return resp, ver, None
+        except Exception as e:
+            last_err = e
+            print(f"[WARN] 请求异常 (impersonate={ver}): {e}")
+            continue
+    # 所有候选都试过后返回最后一次响应或错误，并把最后尝试的指纹返回给调用方
+    return last_resp, (ordered_candidates[-1] if ordered_candidates else IMPERSONATE_VERSION), last_err
+
 def sign(ns_cookie, ns_random):
     if not ns_cookie:
         return "invalid", "无有效Cookie"
@@ -256,11 +353,18 @@ def sign(ns_cookie, ns_random):
     }
     try:
         url = f"https://www.nodeseek.com/api/attendance?random={ns_random}"
-        response = requests.post(url, headers=headers, impersonate=IMPERSONATE_VERSION)
+        response, used_impersonate, req_err = _request_with_impersonate_fallback(
+            "POST", url, headers=headers, json_data={}, timeout=25
+        )
+        if req_err is not None:
+            return "error", f"请求异常: {req_err}"
+        if response is None:
+            return "error", "请求失败：无响应"
         if response.status_code == 403:
-            print("[ERROR] 403 Forbidden - 仍被 Cloudflare 阻拦")
-            print(f"[DEBUG] 响应内容: {response.text[:300]}")
-            return None
+            # 仍然被拦截
+            if _is_cloudflare_challenge(response.text):
+                return "forbidden", f"403 Cloudflare challenge (最后尝试 impersonate={used_impersonate})"
+            return "forbidden", f"403 Forbidden (impersonate={used_impersonate})"
         data = response.json()
         msg = data.get("message", "")
         if "鸡腿" in msg or data.get("success"):
@@ -303,7 +407,13 @@ def get_signin_stats(ns_cookie, days=30):
         
         while page <= 20:  # 最多查询20页，防止无限循环
             url = f"https://www.nodeseek.com/api/account/credit/page-{page}"
-            response = requests.get(url, headers=headers, impersonate=IMPERSONATE_VERSION)
+            response, used_impersonate, req_err = _request_with_impersonate_fallback(
+            "GET", url, headers=headers, json_data=None, timeout=25
+        )
+        if req_err is not None:
+            return None, f"请求异常: {req_err}"
+        if response is None:
+            return None, "请求失败：无响应"
             data = response.json()
             
             if not data.get("success") or not data.get("data"):
