@@ -50,7 +50,7 @@ jobs:
           
           # Cookie配置
           NS_COOKIE: ${{ vars.NS_COOKIE || secrets.NS_COOKIE }}
-          
+          NS_RANDOM: ${{ secrets.NS_RANDOM }}
           # 验证码配置
           SOLVER_TYPE: ${{ secrets.SOLVER_TYPE }}
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
